@@ -50,7 +50,7 @@ export default function Home() {
   const fadeInUp = {
     initial: { opacity: 0, y: 30 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.6, ease: "easeOut" },
   };
 
   const steps = [
@@ -138,7 +138,7 @@ export default function Home() {
                     transition={{
                       duration: 0.6,
                       delay: index * 0.2,
-                      ease: [0.22, 1, 0.36, 1],
+                      ease: "easeOut",
                     }}
                     className="p-8 bg-white rounded-2xl border border-stone-200 hover:border-stone-300 transition-colors"
                   >
@@ -164,7 +164,7 @@ export default function Home() {
               animate={
                 isFormInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }
               }
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
               className="p-8 bg-white rounded-2xl border border-stone-200"
             >
               <h2 className="text-2xl md:text-3xl font-semibold text-center mb-4 text-[#1E3A2F]">
