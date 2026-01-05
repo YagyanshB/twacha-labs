@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Scan, Activity, Package } from 'lucide-react';
+import DemoScanner from './components/DemoScanner';
 
 export default function Home() {
+  const [showDemo, setShowDemo] = useState(false);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -71,6 +73,11 @@ export default function Home() {
     },
   ];
 
+  // Show demo scanner if demo mode is active
+  if (showDemo) {
+    return <DemoScanner onClose={() => setShowDemo(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#1E3A2F]">
       {/* Sticky Navbar */}
@@ -106,10 +113,20 @@ export default function Home() {
               <br />
               Men's Skin
             </h1>
-            <p className="text-lg md:text-xl text-[#52525B] max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-[#52525B] max-w-2xl mx-auto leading-relaxed mb-8">
               Clinical-grade analysis powered by advanced imaging technology. 
               Get precise, actionable insights for your skincare routine.
             </p>
+            {/* Try Live Demo Button */}
+            <motion.button
+              onClick={() => setShowDemo(true)}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="px-8 py-4 bg-white border-2 border-[#1E3A2F] text-[#1E3A2F] font-medium rounded-full hover:bg-[#1E3A2F] hover:text-white hover:shadow-md transition-all inline-flex items-center gap-2"
+            >
+              <Scan className="w-5 h-5" />
+              TRY LIVE DEMO
+            </motion.button>
           </motion.div>
 
           {/* How it Works Section */}
