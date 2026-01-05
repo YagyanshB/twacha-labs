@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Webcam from 'react-webcam';
-import { Scan, Lock, AlertTriangle, X } from 'lucide-react';
+import { Scan, Lock, AlertTriangle, X, Upload } from 'lucide-react';
 
 type ScanState = 'idle' | 'scanning' | 'analyzing' | 'complete' | 'error';
 
@@ -17,14 +17,31 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
   const [showModal, setShowModal] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<string | null>(null);
   const webcamRef = useRef<Webcam>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setImageFile(base64String);
+      // Reset scan state when new image is uploaded
+      setScanState('idle');
+      setAnalysisResult(null);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleRunDiagnostic = async () => {
-    if (!webcamRef.current) {
-      setError('Camera not available');
-      return;
-    }
-
     setScanState('scanning');
     setError(null);
     setAnalysisResult(null);
@@ -32,7 +49,17 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
     // Capture image after a brief delay to show scanning animation
     setTimeout(async () => {
       try {
-        const imageSrc = webcamRef.current?.getScreenshot();
+        let imageSrc: string | null = null;
+
+        // Use uploaded image if available, otherwise capture from webcam
+        if (imageFile) {
+          imageSrc = imageFile;
+        } else {
+          if (!webcamRef.current) {
+            throw new Error('Camera not available');
+          }
+          imageSrc = webcamRef.current.getScreenshot();
+        }
         
         if (!imageSrc) {
           throw new Error('Failed to capture image');
@@ -87,15 +114,33 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
         {/* Camera View with Clinical Grid */}
         <div className="relative bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-6">
           <div className="relative aspect-video bg-gray-900">
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              className="w-full h-full object-cover"
-              videoConstraints={{
-                facingMode: 'user',
-              }}
+            {/* Hidden file input */}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
             />
+
+            {/* Show uploaded image if available, otherwise show webcam */}
+            {imageFile ? (
+              <img
+                src={imageFile}
+                alt="Uploaded skin image"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                className="w-full h-full object-cover"
+                videoConstraints={{
+                  facingMode: 'user',
+                }}
+              />
+            )}
             
             {/* Clinical Grid Overlay */}
             <div className="absolute inset-0 pointer-events-none">
@@ -165,15 +210,26 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
           {/* Control Button */}
           <div className="p-6 border-t border-stone-200">
             {scanState === 'idle' && (
-              <motion.button
-                onClick={handleRunDiagnostic}
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full px-8 py-4 bg-[#1E3A2F] text-white font-medium rounded-full hover:shadow-md transition-shadow flex items-center justify-center gap-2"
-              >
-                <Scan className="w-5 h-5" />
-                RUN DIAGNOSTIC
-              </motion.button>
+              <div className="flex items-center gap-3">
+                <motion.button
+                  onClick={handleRunDiagnostic}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 px-8 py-4 bg-[#1E3A2F] text-white font-medium rounded-full hover:shadow-md transition-shadow flex items-center justify-center gap-2"
+                >
+                  <Scan className="w-5 h-5" />
+                  RUN DIAGNOSTIC
+                </motion.button>
+                <motion.button
+                  onClick={handleUploadClick}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="p-4 bg-white border border-stone-200 text-[#1E3A2F] rounded-full hover:shadow-md transition-shadow"
+                  aria-label="Upload image"
+                >
+                  <Upload className="w-5 h-5" />
+                </motion.button>
+              </div>
             )}
             {scanState === 'scanning' && (
               <div className="text-center">
@@ -206,6 +262,7 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
                   setScanState('idle');
                   setAnalysisResult(null);
                   setError(null);
+                  setImageFile(null); // Reset uploaded image
                 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
