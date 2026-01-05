@@ -5,20 +5,64 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Webcam from 'react-webcam';
 import { Scan, Lock, AlertTriangle, X } from 'lucide-react';
 
-type ScanState = 'idle' | 'scanning' | 'complete';
+type ScanState = 'idle' | 'scanning' | 'analyzing' | 'complete' | 'error';
+
+interface AnalysisResult {
+  verdict: string;
+  reason: string;
+}
 
 export default function DemoScanner({ onClose }: { onClose: () => void }) {
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [showModal, setShowModal] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const webcamRef = useRef<Webcam>(null);
 
-  const handleRunDiagnostic = () => {
+  const handleRunDiagnostic = async () => {
+    if (!webcamRef.current) {
+      setError('Camera not available');
+      return;
+    }
+
     setScanState('scanning');
-    
-    // Simulate 3-second scan
-    setTimeout(() => {
-      setScanState('complete');
-    }, 3000);
+    setError(null);
+    setAnalysisResult(null);
+
+    // Capture image after a brief delay to show scanning animation
+    setTimeout(async () => {
+      try {
+        const imageSrc = webcamRef.current?.getScreenshot();
+        
+        if (!imageSrc) {
+          throw new Error('Failed to capture image');
+        }
+
+        setScanState('analyzing');
+
+        // Send image to API
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ image: imageSrc }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Analysis failed');
+        }
+
+        const data = await response.json();
+        setAnalysisResult(data);
+        setScanState('complete');
+      } catch (err: any) {
+        console.error('Analysis error:', err);
+        setError(err.message || 'Scan Failed');
+        setScanState('error');
+      }
+    }, 1500); // Show scanning animation for 1.5 seconds before capturing
   };
 
   const handleUnlock = () => {
@@ -68,7 +112,7 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* Scanning Animation */}
-            {scanState === 'scanning' && (
+            {(scanState === 'scanning' || scanState === 'analyzing') && (
               <motion.div
                 className="absolute inset-0 pointer-events-none"
                 initial={{ opacity: 0 }}
@@ -137,9 +181,32 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
                 <p className="text-sm text-[#52525B] mt-1">Please hold still</p>
               </div>
             )}
+            {scanState === 'analyzing' && (
+              <div className="text-center">
+                <p className="text-[#52525B] font-medium">Analyzing Tissue Structure...</p>
+                <p className="text-sm text-[#52525B] mt-1">AI processing image</p>
+              </div>
+            )}
+            {scanState === 'error' && (
+              <div className="text-center">
+                <p className="text-red-500 font-medium">{error || 'Scan Failed'}</p>
+                <motion.button
+                  onClick={handleRunDiagnostic}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="mt-4 px-6 py-2 bg-[#1E3A2F] text-white font-medium rounded-full hover:shadow-md transition-shadow"
+                >
+                  Try Again
+                </motion.button>
+              </div>
+            )}
             {scanState === 'complete' && (
               <motion.button
-                onClick={() => setScanState('idle')}
+                onClick={() => {
+                  setScanState('idle');
+                  setAnalysisResult(null);
+                  setError(null);
+                }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 whileHover={{ scale: 1.02 }}
@@ -165,6 +232,27 @@ export default function DemoScanner({ onClose }: { onClose: () => void }) {
               <h3 className="text-xl font-semibold text-[#1E3A2F] mb-6">Analysis Results</h3>
               
               <div className="space-y-6">
+                {/* AI Analysis Result */}
+                {analysisResult && (
+                  <div className="p-4 bg-[#E0E7DF] rounded-lg mb-6">
+                    <div className="flex items-start gap-3">
+                      <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        analysisResult.verdict === 'POP' 
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : analysisResult.verdict === 'STOP'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {analysisResult.verdict}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[#1E3A2F] font-medium mb-1">Verdict</p>
+                        <p className="text-[#52525B] text-sm">{analysisResult.reason}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Section A - Visible Data */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-stone-100">
