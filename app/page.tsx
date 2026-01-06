@@ -14,6 +14,7 @@ interface AnalysisResult {
   verdict: string;
   analysis: string;
   recommendation: string;
+  imagePath?: string | null;
 }
 
 export default function Home() {
@@ -30,14 +31,14 @@ export default function Home() {
     setCapturedImages(images);
     setFunnelState('analyzing');
 
-    // Call API
+    // Call API (email will be sent after user submits in email gate)
     try {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ images }),
+        body: JSON.stringify({ images, email: null }), // Email will be added later
       });
 
       if (!response.ok) {
@@ -63,8 +64,9 @@ export default function Home() {
   const handleEmailSubmit = async (email: string) => {
     setUserEmail(email);
     
-    // Save to Supabase
+    // Save to waitlist and update scan log
     try {
+      // Save to waitlist
       await fetch('/api/waitlist', {
         method: 'POST',
         headers: {
@@ -72,8 +74,28 @@ export default function Home() {
         },
         body: JSON.stringify({ email }),
       });
+
+      // Update scan log with email if image path exists
+      if (analysisResult?.imagePath) {
+        try {
+          await fetch('/api/scan-logs/update', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              email, 
+              imagePath: analysisResult.imagePath 
+            }),
+          });
+        } catch (updateError) {
+          console.error('Scan log update error:', updateError);
+          // Don't block user - continue to results
+        }
+      }
     } catch (error) {
       console.error('Email save error:', error);
+      // Don't block user - continue to results
     }
 
     setFunnelState('results');

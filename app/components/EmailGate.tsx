@@ -9,6 +9,7 @@ interface AnalysisResult {
   verdict: string;
   analysis: string;
   recommendation: string;
+  imagePath?: string | null;
 }
 
 interface EmailGateProps {
