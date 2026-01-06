@@ -2,11 +2,11 @@
 
 :root {
   --background: #FDFBF7;
-  --foreground: #1E3A2F;
+  --foreground: #1E293B;
   --foreground-secondary: #52525B;
-  --accent: #E0E7DF;
-  --primary-green: #1E3A2F;
-  --sage-accent: #E0E7DF;
+  --accent: #3B82F6;
+  --primary-blue: #1E293B;
+  --soft-blue: #3B82F6;
 }
 
 @theme inline {
@@ -14,31 +14,31 @@
   --color-foreground: var(--foreground);
   --color-foreground-secondary: var(--foreground-secondary);
   --color-accent: var(--accent);
-  --color-primary-green: var(--primary-green);
-  --color-sage-accent: var(--sage-accent);
+  --color-primary-blue: var(--primary-blue);
+  --color-soft-blue: var(--soft-blue);
   --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
 }
 
 body {
   background: #FDFBF7;
-  color: #1E3A2F;
+  color: #1E293B;
   font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Serif typography for headings */
+/* Serif typography for headings - Editorial/Trust feel */
 h1, h2, h3, h4, h5, h6 {
-  color: #1E3A2F;
+  color: #1E293B;
   font-family: var(--font-serif), 'Playfair Display', serif;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
-/* Sans-serif for body text */
+/* Sans-serif for UI text */
 p, span, div, button, input, label {
   font-family: var(--font-sans), 'Inter', sans-serif;
 }
@@ -46,6 +46,11 @@ p, span, div, button, input, label {
 p {
   color: #52525B;
   line-height: 1.7;
+}
+
+/* Soft, diffused shadows for floating cards */
+.card-shadow {
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -2px rgba(59, 130, 246, 0.05);
 }
 
 /* Smooth transitions */

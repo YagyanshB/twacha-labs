@@ -79,7 +79,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#1E3A2F]">
+    <div className="min-h-screen bg-[#FDFBF7] text-[#1E293B]">
       {/* Sticky Navbar */}
       <motion.header
         initial={{ opacity: 0, y: -20 }}
@@ -88,13 +88,13 @@ export default function Home() {
         className="sticky top-0 z-50 w-full bg-[#FDFBF7]/90 backdrop-blur-sm border-b border-stone-200"
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-4 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-tight text-[#1E3A2F]">
+          <div className="text-xl font-bold tracking-tight text-[#1E293B]">
             TWACHA LABS
           </div>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="px-6 py-2.5 bg-[#1E3A2F] text-white font-medium rounded-full hover:shadow-md transition-shadow"
+            className="px-6 py-2.5 bg-[#3B82F6] text-white font-medium rounded-full hover:shadow-lg transition-shadow"
           >
             Get Access
           </motion.button>
@@ -108,7 +108,7 @@ export default function Home() {
             {...fadeInUp}
             className="text-center mb-24"
           >
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 leading-tight tracking-tight text-[#1E3A2F]">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 leading-tight tracking-tight text-[#1E293B]">
               Precision Triage for
               <br />
               Men's Skin
@@ -122,7 +122,7 @@ export default function Home() {
               onClick={() => setShowDemo(true)}
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="px-8 py-4 bg-white border-2 border-[#1E3A2F] text-[#1E3A2F] font-medium rounded-full hover:bg-[#1E3A2F] hover:text-white hover:shadow-md transition-all inline-flex items-center gap-2"
+              className="px-8 py-4 bg-[#3B82F6] text-white font-medium rounded-full hover:bg-[#2563EB] hover:shadow-lg transition-all inline-flex items-center gap-2"
             >
               <Scan className="w-5 h-5" />
               TRY LIVE DEMO
@@ -135,7 +135,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={isStepsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-semibold text-center mb-16 text-[#1E3A2F]"
+              className="text-3xl md:text-4xl font-semibold text-center mb-16 text-[#1E293B]"
             >
               How it Works
             </motion.h2>
@@ -157,12 +157,12 @@ export default function Home() {
                       delay: index * 0.2,
                       ease: "easeOut",
                     }}
-                    className="p-8 bg-white rounded-2xl border border-stone-200 hover:border-stone-300 transition-colors"
+                    className="p-8 bg-white rounded-2xl border border-stone-200 card-shadow hover:shadow-lg transition-all"
                   >
-                    <div className="w-14 h-14 rounded-full bg-[#E0E7DF] flex items-center justify-center mb-6">
-                      <Icon className="w-7 h-7 text-[#1E3A2F]" />
+                    <div className="w-14 h-14 rounded-full bg-[#3B82F6]/10 flex items-center justify-center mb-6">
+                      <Icon className="w-7 h-7 text-[#3B82F6]" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-3 text-[#1E3A2F]">
+                    <h3 className="text-xl font-semibold mb-3 text-[#1E293B]">
                       Step {index + 1}: {step.title}
                     </h3>
                     <p className="text-[#52525B] leading-relaxed">
@@ -182,9 +182,9 @@ export default function Home() {
                 isFormInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }
               }
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="p-8 bg-white rounded-2xl border border-stone-200"
+              className="p-8 bg-white rounded-2xl border border-stone-200 card-shadow"
             >
-              <h2 className="text-2xl md:text-3xl font-semibold text-center mb-4 text-[#1E3A2F]">
+              <h2 className="text-2xl md:text-3xl font-semibold text-center mb-4 text-[#1E293B]">
                 Join the Waitlist
               </h2>
               <p className="text-center text-[#52525B] mb-6">
@@ -198,7 +198,7 @@ export default function Home() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="w-full px-5 py-3.5 bg-[#FDFBF7] border border-stone-200 rounded-full focus:outline-none focus:border-[#1E3A2F] focus:ring-1 focus:ring-[#1E3A2F] text-[#1E3A2F] placeholder-[#9CA3AF] transition-all"
+                  className="w-full px-5 py-3.5 bg-[#FDFBF7] border border-stone-200 rounded-full focus:outline-none focus:border-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6] text-[#1E293B] placeholder-[#9CA3AF] transition-all"
                   disabled={loading}
                 />
                 <motion.button
@@ -206,7 +206,7 @@ export default function Home() {
                   disabled={loading}
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full px-8 py-3.5 bg-[#1E3A2F] text-white font-medium rounded-full hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-8 py-3.5 bg-[#3B82F6] text-white font-medium rounded-full hover:bg-[#2563EB] hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Joining...' : 'Join Waitlist'}
                 </motion.button>
@@ -239,9 +239,9 @@ export default function Home() {
               transition={{ delay: 0.3, duration: 0.6 }}
               className="text-center mt-8"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#E0E7DF] rounded-full">
-                <CheckCircle2 className="w-4 h-4 text-[#1E3A2F]" />
-                <span className="text-sm text-[#1E3A2F] font-medium">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#3B82F6]/10 rounded-full border border-[#3B82F6]/20">
+                <CheckCircle2 className="w-4 h-4 text-[#3B82F6]" />
+                <span className="text-sm text-[#1E293B] font-medium">
                   Trusted by 500+ users
                 </span>
               </div>
