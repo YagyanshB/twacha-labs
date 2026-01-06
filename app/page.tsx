@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { Scan, Camera, Loader2, Mail, CheckCircle2 } from 'lucide-react';
 import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
@@ -202,10 +203,12 @@ function HeroSection({ onStartScan }: { onStartScan: () => void }) {
       {/* Hero Content */}
       <div className="flex-1 flex items-center justify-center px-6 md:px-12 py-12">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          {/* Text Content - Left on Desktop, Bottom on Mobile */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            className="order-2 md:order-1"
           >
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 leading-tight text-[#1E293B]">
               Precision Triage for
@@ -226,19 +229,33 @@ function HeroSection({ onStartScan }: { onStartScan: () => void }) {
             </motion.button>
           </motion.div>
 
-          {/* Product Visual Placeholder */}
+          {/* Product Image - Right on Desktop, Top on Mobile */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="relative"
+            className="relative order-1 md:order-2 flex items-center justify-center"
           >
-            <div className="bg-white rounded-3xl border border-stone-200 shadow-xl p-8 aspect-square flex items-center justify-center">
-              <div className="text-center">
-                <Camera className="w-24 h-24 text-[#3B82F6] mx-auto mb-4" />
-                <p className="text-[#52525B] text-sm">Black Tin + Macro Lens</p>
-              </div>
-            </div>
+            <motion.div
+              animate={{
+                y: [0, -10, 0],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="relative w-full max-w-full"
+            >
+              <Image
+                src="/breach-kit.png"
+                alt="Twacha Labs Tactical Breach Kit"
+                width={600}
+                height={600}
+                className="w-full h-auto rounded-3xl shadow-2xl"
+                priority
+              />
+            </motion.div>
           </motion.div>
         </div>
       </div>
