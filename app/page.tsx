@@ -7,6 +7,7 @@ import { Scan, ScanFace, Sparkles, Package, Droplet, Shield, Brain, TrendingUp }
 import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
+import ProductSection from './components/ProductSection';
 
 type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
 
@@ -108,6 +109,7 @@ export default function Home() {
             className="min-h-screen flex flex-col"
           >
             <HeroSection onStartScan={handleStartScan} />
+            <ProductSection />
             <HowItWorksSection />
             <AIInsightsSection />
             <Footer />
