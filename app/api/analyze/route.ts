@@ -2,56 +2,52 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-// 1. Init Clients
-// We use the SERVICE_ROLE key here because we are on the server (Secure)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! 
-);
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// ❌ DO NOT initialize Supabase here. It causes the build error.
 
 export async function POST(req: Request) {
   try {
-    const { image } = await req.json();
+    // ✅ Initialize INSIDE the function. 
+    // This way, it only runs when a user actually requests a scan, not during build.
+    
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+
+    // Safety check to prevent crashing if keys are missing
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Build/Runtime Error: Missing Supabase Keys");
+      return NextResponse.json({ error: "Server Config Error" }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const openai = new OpenAI({ apiKey: openaiKey });
+
+    // --- READ REQUEST ---
+    const body = await req.json();
+    const { image } = body;
 
     if (!image) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    // --- A. UPLOAD TO SUPABASE STORAGE (The Data Moat) ---
-    // 1. Clean the base64 string
+    // --- A. UPLOAD TO STORAGE ---
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    // 2. Turn it into a buffer
     const buffer = Buffer.from(base64Data, 'base64');
-    // 3. Generate a unique filename
     const fileName = `scan_${Date.now()}.jpg`;
 
-    // 4. Upload
+    // Upload (Ignore error for MVP flow if storage isn't set up perfectly)
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('scan-images')
-      .upload(fileName, buffer, {
-        contentType: 'image/jpeg'
-      });
+      .upload(fileName, buffer, { contentType: 'image/jpeg' });
 
-    if (uploadError) {
-      console.error("Upload Error:", uploadError);
-      // We continue even if upload fails, to not block the user
+    let imageUrl = "";
+    if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage.from('scan-images').getPublicUrl(fileName);
+        imageUrl = publicUrlData.publicUrl;
     }
 
-    // 5. Get the public link (to save in DB)
-    const { data: publicUrlData } = supabase
-      .storage
-      .from('scan-images')
-      .getPublicUrl(fileName);
-
-    const imageUrl = publicUrlData.publicUrl;
-
-
-    // --- B. ANALYZE WITH GPT-4o (The Brain) ---
+    // --- B. ANALYZE WITH GPT-4o ---
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -72,24 +68,21 @@ export async function POST(req: Request) {
 
     const aiResult = JSON.parse(response.choices[0].message.content || "{}");
 
-
-    // --- C. SAVE DATA TO DATABASE (The Asset) ---
-    const { error: dbError } = await supabase
-      .from('scans')
-      .insert({
+    // --- C. SAVE TO DB ---
+    // Only save if we have a valid image URL
+    if (imageUrl) {
+        await supabase.from('scans').insert({
         image_url: imageUrl,
         ai_diagnosis: aiResult.diagnosis,
         ai_verdict: aiResult.verdict,
         ai_confidence: aiResult.confidence || 0
-      });
+        });
+    }
 
-    if (dbError) console.error("DB Error:", dbError);
-
-    // --- D. RETURN RESULT TO APP ---
     return NextResponse.json(aiResult);
 
-  } catch (error) {
-    console.error("Server Error:", error);
-    return NextResponse.json({ error: "Scan Failed" }, { status: 500 });
+  } catch (error: any) {
+    console.error("🔥 SERVER ERROR:", error);
+    return NextResponse.json({ error: error.message || "Scan Failed" }, { status: 500 });
   }
 }
