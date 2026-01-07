@@ -1,233 +1,95 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-export async function POST(req: NextRequest) {
-  let uploadedImagePaths: string[] = [];
-  
+// 1. Init Clients
+// We use the SERVICE_ROLE key here because we are on the server (Secure)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! 
+);
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export async function POST(req: Request) {
   try {
-    // Step A: Setup
-    const supabase = createSupabaseServerClient();
-    const openai = process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'undefined'
-      ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-      : null;
+    const { image } = await req.json();
 
-    // Step B: Parse Input
-    const { images, email } = await req.json();
-
-    if (!images || !Array.isArray(images) || images.length !== 3) {
-      return NextResponse.json({ 
-        error: "Exactly 3 images are required (Center, Left, Right)" 
-      }, { status: 400 });
+    if (!image) {
+      return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    // Step C: Upload Images to Supabase Storage
-    if (supabase) {
-      try {
-        const date = new Date();
-        const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-        const timestamp = Date.now();
-        
-        for (let i = 0; i < images.length; i++) {
-          try {
-            const image = images[i];
-            // Remove data URL prefix if present
-            const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-            
-            // Convert base64 to buffer
-            const buffer = Buffer.from(base64Data, 'base64');
-            
-            // Generate file path
-            const randomStr = Math.random().toString(36).substring(2, 8);
-            const filePath = `raw/${dateStr}/scan_${timestamp}_${i}_${randomStr}.jpg`;
-            
-            // Upload to Supabase Storage
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('scans')
-              .upload(filePath, buffer, {
-                contentType: 'image/jpeg',
-                upsert: false,
-              });
+    // --- A. UPLOAD TO SUPABASE STORAGE (The Data Moat) ---
+    // 1. Clean the base64 string
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    // 2. Turn it into a buffer
+    const buffer = Buffer.from(base64Data, 'base64');
+    // 3. Generate a unique filename
+    const fileName = `scan_${Date.now()}.jpg`;
 
-            if (uploadError) {
-              console.error(`❌ Failed to upload image ${i}:`, uploadError);
-              // Continue even if upload fails
-            } else {
-              uploadedImagePaths.push(filePath);
-              console.log(`✅ Uploaded image ${i} to: ${filePath}`);
-            }
-          } catch (imageError: any) {
-            console.error(`❌ Error processing image ${i}:`, imageError);
-            // Continue with next image
-          }
-        }
-      } catch (storageError: any) {
-        console.error('❌ Storage upload error (continuing with analysis):', storageError);
-        // Don't block the user - continue with AI analysis
-      }
-    } else {
-      console.warn('⚠️ Supabase not configured - skipping image upload');
-    }
-
-    // Step D: AI Analysis
-    let aiResult: any = null;
-    
-    if (!openai) {
-      console.log('⚠️ OPENAI_API_KEY not found - returning mock response');
-      
-      // Mock response
-      const mockScore = Math.floor(Math.random() * 41) + 40; // 40-80
-      let mockVerdict: string;
-      let mockAnalysis: string;
-      let mockRecommendation: string;
-      let mockConfidence: number;
-
-      if (mockScore < 50) {
-        mockVerdict = 'STOP';
-        mockAnalysis = 'Analysis of all three angles reveals significant skin barrier compromise. Deep inflammation and cystic formations detected across multiple facial zones. Immediate professional consultation recommended.';
-        mockRecommendation = 'The Founder\'s Kit - Emergency Protocol';
-        mockConfidence = 0.85;
-      } else if (mockScore < 80) {
-        mockVerdict = 'CAUTION';
-        mockAnalysis = 'Moderate skin congestion observed across facial regions. Some areas show active inflammation and pore blockage. Targeted intervention recommended.';
-        mockRecommendation = 'The Founder\'s Kit - Standard Protocol';
-        mockConfidence = 0.75;
-      } else {
-        mockVerdict = 'POP';
-        mockAnalysis = 'Minor surface-level concerns detected. Skin barrier largely intact with isolated whitehead formations. Preventive maintenance recommended.';
-        mockRecommendation = 'The Founder\'s Kit - Maintenance Protocol';
-        mockConfidence = 0.90;
-      }
-
-      aiResult = {
-        score: mockScore,
-        verdict: mockVerdict,
-        analysis: mockAnalysis,
-        recommendation: mockRecommendation,
-        confidence: mockConfidence,
-      };
-    } else {
-      // Format all 3 images for OpenAI
-      const formattedImages = images.map((img: string) => 
-        img.startsWith('data:image') ? img : `data:image/jpeg;base64,${img}`
-      );
-
-      console.log("🚀 Sending 3-angle analysis request to OpenAI...");
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a Senior Dermatologist. Analyze these 3 skin images (Center, Left, Right angles of the face). 
-            Return strict JSON with fields:
-            - "diagnosis" (string: detailed diagnosis)
-            - "verdict" (string: "POP" | "STOP" | "CAUTION")
-            - "reasoning" (string: clinical reasoning)
-            - "confidence" (number: 0.0 to 1.0, your confidence in the diagnosis)
-            - "score" (number: 0-100, Skin Integrity Score where 100 = Perfect, 0 = Severe Trauma)`
-          },
-          {
-            role: "user",
-            content: [
-              { 
-                type: "text", 
-                text: "Analyze these 3 facial angles for skin integrity. Provide diagnosis, verdict, reasoning, confidence, and score." 
-              },
-              { 
-                type: "image_url", 
-                image_url: { url: formattedImages[0] },
-              },
-              { 
-                type: "image_url", 
-                image_url: { url: formattedImages[1] },
-              },
-              { 
-                type: "image_url", 
-                image_url: { url: formattedImages[2] },
-              },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 500,
+    // 4. Upload
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('scan-images')
+      .upload(fileName, buffer, {
+        contentType: 'image/jpeg'
       });
 
-      console.log("🔍 Finish Reason:", response.choices[0].finish_reason);
-      
-      if (response.choices[0].finish_reason === 'content_filter') {
-        console.error("❌ BLOCKED BY SAFETY FILTER");
-        aiResult = {
-          score: 0,
-          verdict: "STOP",
-          analysis: "Image flagged as sensitive/medical. Please consult a doctor.",
-          recommendation: "Consult with a dermatologist for professional assessment.",
-          confidence: 0.5,
-        };
-      } else {
-        const content = response.choices[0].message.content;
-        console.log("📄 Raw Content:", content);
-
-        if (!content) {
-          throw new Error("OpenAI returned empty content.");
-        }
-
-        const parsed = JSON.parse(content);
-        
-        // Map AI response to our format
-        aiResult = {
-          score: parsed.score || 50,
-          verdict: parsed.verdict || 'CAUTION',
-          analysis: parsed.diagnosis || parsed.reasoning || 'Analysis complete',
-          recommendation: 'The Founder\'s Kit',
-          confidence: parsed.confidence || 0.75,
-        };
-      }
+    if (uploadError) {
+      console.error("Upload Error:", uploadError);
+      // We continue even if upload fails, to not block the user
     }
 
-    // Step E: Log Data to Supabase
-    if (supabase && uploadedImagePaths.length > 0) {
-      try {
-        const primaryImagePath = uploadedImagePaths[0]; // Use first image as primary
-        
-        const { error: dbError } = await supabase
-          .from('scan_logs')
-          .insert({
-            image_path: primaryImagePath,
-            ai_verdict: aiResult.verdict,
-            ai_diagnosis: aiResult.analysis,
-            ai_confidence: aiResult.confidence || 0.75,
-            user_email: email || null,
-          });
+    // 5. Get the public link (to save in DB)
+    const { data: publicUrlData } = supabase
+      .storage
+      .from('scan-images')
+      .getPublicUrl(fileName);
 
-        if (dbError) {
-          console.error('❌ Failed to log scan to database:', dbError);
-          // Don't block the user - continue to return results
-        } else {
-          console.log('✅ Scan logged to database');
-        }
-      } catch (dbError: any) {
-        console.error('❌ Database logging error (continuing):', dbError);
-        // Don't block the user
-      }
-    } else {
-      console.warn('⚠️ Supabase not configured or no images uploaded - skipping database log');
-    }
+    const imageUrl = publicUrlData.publicUrl;
 
-    // Step F: Return Results
-    return NextResponse.json({
-      score: aiResult.score,
-      verdict: aiResult.verdict,
-      analysis: aiResult.analysis,
-      recommendation: aiResult.recommendation,
-      imagePath: uploadedImagePaths[0] || null, // Return primary image path for email update
+
+    // --- B. ANALYZE WITH GPT-4o (The Brain) ---
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a Dermatological Triage AI. Analyze the skin. RULES: If whitehead/pustule -> verdict: 'POP'. If cystic/red/deep -> verdict: 'STOP'. Return strict JSON: { diagnosis: string, verdict: string, confidence: number, reasoning: string }."
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Analyze this image." },
+            { type: "image_url", image_url: { url: image } },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
     });
 
-  } catch (error: any) {
-    console.error("🔥 Server Error:", error);
-    return NextResponse.json({ 
-      error: "Scan Failed", 
-      details: error.message 
-    }, { status: 500 });
+    const aiResult = JSON.parse(response.choices[0].message.content || "{}");
+
+
+    // --- C. SAVE DATA TO DATABASE (The Asset) ---
+    const { error: dbError } = await supabase
+      .from('scans')
+      .insert({
+        image_url: imageUrl,
+        ai_diagnosis: aiResult.diagnosis,
+        ai_verdict: aiResult.verdict,
+        ai_confidence: aiResult.confidence || 0
+      });
+
+    if (dbError) console.error("DB Error:", dbError);
+
+    // --- D. RETURN RESULT TO APP ---
+    return NextResponse.json(aiResult);
+
+  } catch (error) {
+    console.error("Server Error:", error);
+    return NextResponse.json({ error: "Scan Failed" }, { status: 500 });
   }
 }
