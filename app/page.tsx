@@ -8,6 +8,7 @@ import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
 import ProductSection from './components/ProductSection';
+import ProductModal from './components/ProductModal';
 
 type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
 
@@ -24,6 +25,7 @@ export default function Home() {
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
   const handleStartScan = () => {
     setFunnelState('scanning');
@@ -108,7 +110,7 @@ export default function Home() {
             exit={{ opacity: 0 }}
             className="min-h-screen flex flex-col"
           >
-            <HeroSection onStartScan={handleStartScan} />
+            <HeroSection onStartScan={handleStartScan} onOpenModal={() => setIsProductModalOpen(true)} />
             <ProductSection />
             <HowItWorksSection />
             <AIInsightsSection />
@@ -174,12 +176,18 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Product Modal */}
+      <ProductModal
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+      />
     </div>
   );
 }
 
 // Sticky Glassmorphic Navbar
-function Navbar({ onStartScan }: { onStartScan: () => void }) {
+function Navbar({ onOpenModal }: { onOpenModal: () => void }) {
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -192,7 +200,7 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
             TWACHA
           </div>
           <motion.button
-            onClick={onStartScan}
+            onClick={onOpenModal}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="px-6 py-2.5 bg-[#104136] text-white font-medium rounded-full hover:bg-[#0d3529] transition-all shadow-lg"
@@ -206,10 +214,10 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
 }
 
 // Hero Section with iPhone Mockup
-function HeroSection({ onStartScan }: { onStartScan: () => void }) {
+function HeroSection({ onStartScan, onOpenModal }: { onStartScan: () => void; onOpenModal: () => void }) {
   return (
     <>
-      <Navbar onStartScan={onStartScan} />
+      <Navbar onOpenModal={onOpenModal} />
       
       <div className="pt-24 pb-16 md:pt-32 md:pb-24 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
