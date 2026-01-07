@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef } from 'react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import Image from 'next/image';
-import { Scan, Camera, Loader2, Mail, CheckCircle2 } from 'lucide-react';
+import { Scan, Camera, Loader2, Mail, CheckCircle2, Activity, Package } from 'lucide-react';
 import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
+import MobileScanDemo from './components/MobileScanDemo';
 
 type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
 
@@ -259,7 +260,79 @@ function HeroSection({ onStartScan }: { onStartScan: () => void }) {
           </motion.div>
         </div>
       </div>
+
+      {/* Mobile Scan Demo - Below Hero */}
+      <div className="w-full py-16 bg-white">
+        <MobileScanDemo />
+      </div>
+
+      {/* 3-Step Protocol Section */}
+      <ProtocolSection />
     </>
+  );
+}
+
+// 3-Step Protocol Section Component
+function ProtocolSection() {
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { once: true, margin: '-100px' });
+
+  const steps = [
+    {
+      icon: Scan,
+      title: 'The Scan',
+      description: 'Clip on the Macro Lens. Our AI maps your pore structure at 15x magnification.',
+    },
+    {
+      icon: Activity,
+      title: 'The Intel',
+      description: 'Instant analysis. The engine identifies skin type (Oily/Dry), acne type (Cystic/Pustule), and inflammation levels.',
+    },
+    {
+      icon: Package,
+      title: 'The Loadout',
+      description: 'We generate a custom routine and ship the exact hardware kit needed to resolve the breach.',
+    },
+  ];
+
+  return (
+    <div ref={sectionRef} className="w-full py-20 md:py-32 bg-[#FDFBF7] px-6 md:px-12">
+      <div className="max-w-6xl mx-auto">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6 }}
+          className="text-4xl md:text-5xl font-semibold text-center mb-16 text-[#1E293B]"
+        >
+          THE PROTOCOL
+        </motion.h2>
+
+        <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                transition={{ delay: index * 0.2, duration: 0.6 }}
+                className="text-center"
+              >
+                <div className="w-16 h-16 bg-[#1E293B] rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-[#1E293B]">
+                  Step {index + 1}: {step.title}
+                </h3>
+                <p className="text-[#52525B] leading-relaxed">
+                  {step.description}
+                </p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
