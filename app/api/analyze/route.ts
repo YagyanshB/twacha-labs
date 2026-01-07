@@ -35,16 +35,25 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(base64Data, 'base64');
     const fileName = `scan_${Date.now()}.jpg`;
 
-    // Upload (Ignore error for MVP flow if storage isn't set up perfectly)
+    // Upload to Supabase Storage (hardcoded bucket: 'scan-images')
+    let imageUrl = "";
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('scan-images')
       .upload(fileName, buffer, { contentType: 'image/jpeg' });
 
-    let imageUrl = "";
-    if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage.from('scan-images').getPublicUrl(fileName);
-        imageUrl = publicUrlData.publicUrl;
+    if (uploadError) {
+      // Log detailed error but don't crash - allow AI analysis to proceed
+      console.error("❌ Supabase Storage Upload Failed:");
+      console.error("   Error Message:", uploadError.message);
+      console.error("   Error Details:", JSON.stringify(uploadError, null, 2));
+      console.error("   File Name:", fileName);
+      // Continue execution - AI analysis will still work
+    } else {
+      // Successfully uploaded, get public URL
+      const { data: publicUrlData } = supabase.storage.from('scan-images').getPublicUrl(fileName);
+      imageUrl = publicUrlData.publicUrl;
+      console.log("✅ Image uploaded successfully:", imageUrl);
     }
 
     // --- B. ANALYZE WITH GPT-4o ---
@@ -53,7 +62,22 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: "You are a Dermatological Triage AI. Analyze the skin. RULES: If whitehead/pustule -> verdict: 'POP'. If cystic/red/deep -> verdict: 'STOP'. Return strict JSON: { diagnosis: string, verdict: string, confidence: number, reasoning: string }."
+          content: `You are a Dermatological Triage AI (SECTOR-1). Analyze skin images and provide a verdict.
+
+VERDICT RULES (STRICT):
+- If no distinct blemish is found -> Verdict: "CLEAR"
+- If visible whitehead/pustule (surface-level, safe to extract) -> Verdict: "POP"
+- If red/inflamed/deep cyst (do not extract) -> Verdict: "STOP"
+- If dangerous/unknown/requires medical attention -> Verdict: "DOCTOR"
+
+OUTPUT FORMAT (STRICT JSON ONLY):
+{
+  "verdict": "CLEAR" | "POP" | "STOP" | "DOCTOR",
+  "diagnosis": "Brief description of what you see",
+  "confidence": 0.0-1.0
+}
+
+Return ONLY valid JSON. No markdown, no code blocks, no explanations outside the JSON.`
         },
         {
           role: "user",
@@ -66,10 +90,28 @@ export async function POST(req: Request) {
       response_format: { type: "json_object" },
     });
 
-    const aiResult = JSON.parse(response.choices[0].message.content || "{}");
+    // --- C. SAFE JSON PARSING (strip markdown if present) ---
+    let rawContent = response.choices[0].message.content || "{}";
+    
+    // Strip markdown code blocks if OpenAI returns them (e.g., ```json ... ```)
+    rawContent = rawContent.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    
+    let aiResult;
+    try {
+      aiResult = JSON.parse(rawContent);
+    } catch (parseError) {
+      console.error("❌ JSON Parse Error:", parseError);
+      console.error("   Raw Content:", rawContent);
+      // Fallback to safe default
+      aiResult = {
+        verdict: "DOCTOR",
+        diagnosis: "Analysis error - please try again",
+        confidence: 0.0
+      };
+    }
 
-    // --- C. SAVE TO DB ---
-    // Only save if we have a valid image URL
+    // --- D. SAVE TO DB ---
+    // Only save if we have a valid image URL (upload succeeded)
     if (imageUrl) {
         await supabase.from('scans').insert({
         image_url: imageUrl,
