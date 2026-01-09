@@ -1,48 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { email, imagePath } = await req.json();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ error: "Server Config Error" }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const body = await req.json();
+    const { email, imagePath } = body;
 
     if (!email || !imagePath) {
-      return NextResponse.json(
-        { error: 'Email and imagePath are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email and imagePath required" }, { status: 400 });
     }
 
-    const supabase = createSupabaseServerClient();
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase not configured' },
-        { status: 500 }
-      );
-    }
-
-    // Update the most recent scan log with this image path to add the email
-    const { error: updateError } = await supabase
-      .from('scan_logs')
+    const { error } = await supabase
+      .from('scans')
       .update({ user_email: email })
-      .eq('image_path', imagePath)
-      .is('user_email', null)
-      .order('created_at', { ascending: false })
-      .limit(1);
+      .eq('image_url', imagePath);
 
-    if (updateError) {
-      console.error('❌ Failed to update scan log with email:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to update scan log' },
-        { status: 500 }
-      );
+    if (error) {
+      console.error("Update error:", error);
+      return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('🔥 Update scan log error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update scan log' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "Update Failed" }, { status: 500 });
   }
 }
