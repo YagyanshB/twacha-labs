@@ -63,7 +63,7 @@ export default function ProductSection() {
 
             {/* Description */}
             <p className="text-lg md:text-xl text-[#1E3A2F]/80 leading-relaxed">
-              The complete tactical protocol. Clinical-grade hardware to stop scarring before it starts.
+              The complete tactical protocol. Precision tools designed to help prevent scarring and improve skin appearance.
             </p>
 
             {/* Kit Items List */}

@@ -9,7 +9,15 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+      },
     ],
+  },
+  // Vercel deployment optimizations
+  experimental: {
+    optimizePackageImports: ['@tensorflow/tfjs', '@tensorflow-models/face-detection'],
   },
 };
 
