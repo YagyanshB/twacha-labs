@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const playfairDisplay = Playfair_Display({
@@ -25,6 +26,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* MediaPipe CDN Scripts - Load before interactive to avoid bundling issues */}
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+          strategy="beforeInteractive"
+          crossOrigin="anonymous"
+        />
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+          strategy="beforeInteractive"
+          crossOrigin="anonymous"
+        />
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"
+          strategy="beforeInteractive"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
         className={`${playfairDisplay.variable} ${inter.variable} antialiased`}
       >
