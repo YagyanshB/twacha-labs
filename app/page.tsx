@@ -6,8 +6,9 @@ import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
 import ProductModal from './components/ProductModal';
+import SkinAnalysisFlow from './components/SkinAnalysisFlow';
 
-type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
+type FunnelState = 'landing' | 'analysis-flow' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
 
 interface AnalysisResult {
   score: number;
@@ -23,12 +24,26 @@ export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [userData, setUserData] = useState<{ photo: string; skinType: string; age: string } | null>(null);
 
   const handleStartScan = () => {
-    setFunnelState('scanning');
+    // Start with the new analysis flow
+    setFunnelState('analysis-flow');
   };
 
-  const handleScanComplete = async (images: string[]) => {
+  const handleAnalysisFlowComplete = (data: { photo: string; skinType: string; age: string }) => {
+    setUserData(data);
+    // Photo is always captured in the flow, proceed directly to analysis
+    if (data.photo) {
+      setCapturedImages([data.photo]);
+      handleAnalysis([data.photo]);
+    } else {
+      // Fallback: if no photo somehow, go to scanning
+      setFunnelState('scanning');
+    }
+  };
+
+  const handleAnalysis = async (images: string[]) => {
     setCapturedImages(images);
     setFunnelState('analyzing');
 
@@ -38,7 +53,12 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ images, email: null }),
+        body: JSON.stringify({ 
+          images, 
+          email: null,
+          skinType: userData?.skinType,
+          age: userData?.age,
+        }),
       });
 
       if (!response.ok) {
@@ -71,6 +91,12 @@ export default function Home() {
       });
       setFunnelState('email-gate');
     }
+  };
+
+  const handleScanComplete = async (images: string[]) => {
+    // Combine with photo from flow if available
+    const allImages = userData?.photo ? [userData.photo, ...images] : images;
+    handleAnalysis(allImages);
   };
 
   // Helper function to generate recommendation based on verdict
@@ -127,6 +153,20 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <AnimatePresence mode="wait">
+        {funnelState === 'analysis-flow' && (
+          <motion.div
+            key="analysis-flow"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <SkinAnalysisFlow
+              onComplete={handleAnalysisFlowComplete}
+              onBack={() => setFunnelState('landing')}
+            />
+          </motion.div>
+        )}
+
         {funnelState === 'landing' && (
           <motion.div
             key="landing"
