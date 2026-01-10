@@ -7,41 +7,41 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Simple Header */}
-      <header className="border-b border-zinc-900">
+      <header className="border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link href="/" className="text-xl font-bold hover:text-zinc-300 transition">
+          <Link href="/" className="text-xl font-bold hover:text-white/80 transition">
             Twacha Labs
           </Link>
         </div>
       </header>
 
-      {/* Hero Section - More Spacious */}
+      {/* Hero Section */}
       <section className="pt-20 pb-16 sm:pt-32 sm:pb-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-6 tracking-tight">
             Simple pricing
           </h1>
-          <p className="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto">
             Start free. Upgrade when you need more. Cancel anytime.
           </p>
         </div>
       </section>
 
-      {/* Pricing Cards - Clean Grid */}
+      {/* Pricing Cards - Ultra Minimalist Grid */}
       <section className="pb-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             
             {/* Free Tier */}
-            <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-8 flex flex-col">
+            <div className="bg-black border border-white/10 rounded-lg p-8 flex flex-col h-full">
               <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2">Free</h3>
-                <div className="flex items-baseline gap-2 mb-6">
-                  <span className="text-5xl font-bold">£0</span>
+                <h3 className="text-2xl font-bold mb-4">Free</h3>
+                <div className="mb-6">
+                  <span className="text-6xl font-bold">£0</span>
                 </div>
                 <Link
                   href="/analysis"
-                  className="block w-full bg-zinc-900 text-white py-3 rounded-lg font-medium text-center hover:bg-zinc-800 transition"
+                  className="block w-full bg-white/5 border border-white/10 text-white py-3 rounded-lg font-medium text-center hover:bg-white/10 transition"
                 >
                   Start free
                 </Link>
@@ -55,50 +55,52 @@ export default function PricingPage() {
               </ul>
             </div>
 
-            {/* Premium Tier */}
-            <div className="bg-white text-black rounded-lg p-8 flex flex-col relative border-2 border-white">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-zinc-900 text-white px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
-                  Most Popular
-                </span>
-              </div>
+            {/* Premium Tier - Highlighted */}
+            <div className="bg-black border-2 border-white rounded-lg p-8 flex flex-col h-full relative">
+              {/* Subtle glow effect */}
+              <div className="absolute inset-0 rounded-lg bg-white/5 pointer-events-none" />
               
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2">Premium</h3>
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-5xl font-bold">£4.99</span>
-                  <span className="text-zinc-600">/month</span>
+              <div className="relative mb-8">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-white text-black px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
+                    Most Popular
+                  </span>
                 </div>
-                <p className="text-sm text-zinc-600 mb-6">or £49/year (save 17%)</p>
+                <h3 className="text-2xl font-bold mb-4 mt-2">Premium</h3>
+                <div className="mb-2">
+                  <span className="text-6xl font-bold">£4.99</span>
+                  <span className="text-white/60 text-lg ml-2">/month</span>
+                </div>
+                <p className="text-sm text-white/50 mb-6">or £49/year (save 17%)</p>
                 <Link
                   href="/checkout?plan=premium"
-                  className="block w-full bg-black text-white py-3 rounded-lg font-medium text-center hover:bg-zinc-800 transition"
+                  className="block w-full bg-white text-black py-3 rounded-lg font-medium text-center hover:bg-white/90 transition"
                 >
                   Go premium
                 </Link>
               </div>
               
-              <ul className="space-y-4 flex-1">
-                <Feature dark>Unlimited analyses</Feature>
-                <Feature dark>Advanced skin analysis</Feature>
-                <Feature dark>Progress tracking</Feature>
-                <Feature dark>Personalized routines</Feature>
-                <Feature dark>Product recommendations</Feature>
-                <Feature dark>Priority support</Feature>
+              <ul className="space-y-4 flex-1 relative">
+                <Feature>Unlimited analyses</Feature>
+                <Feature>Advanced skin analysis</Feature>
+                <Feature>Progress tracking</Feature>
+                <Feature>Personalized routines</Feature>
+                <Feature>Product recommendations</Feature>
+                <Feature>Priority support</Feature>
               </ul>
             </div>
 
             {/* One-Time */}
-            <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-8 flex flex-col">
+            <div className="bg-black border border-white/10 rounded-lg p-8 flex flex-col h-full">
               <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-2">Premium Report</h3>
-                <div className="flex items-baseline gap-2 mb-6">
-                  <span className="text-5xl font-bold">£9.99</span>
-                  <span className="text-zinc-600">/once</span>
+                <h3 className="text-2xl font-bold mb-4">Premium Report</h3>
+                <div className="mb-6">
+                  <span className="text-6xl font-bold">£9.99</span>
+                  <span className="text-white/60 text-lg ml-2">/once</span>
                 </div>
                 <Link
                   href="/checkout?plan=onetime"
-                  className="block w-full bg-zinc-900 text-white py-3 rounded-lg font-medium text-center hover:bg-zinc-800 transition"
+                  className="block w-full bg-white/5 border border-white/10 text-white py-3 rounded-lg font-medium text-center hover:bg-white/10 transition"
                 >
                   Get report
                 </Link>
@@ -117,7 +119,7 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ - Minimal */}
-      <section className="border-t border-zinc-900 py-32">
+      <section className="border-t border-white/10 py-32">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl sm:text-4xl font-bold mb-16 text-center">
             Questions
@@ -145,17 +147,17 @@ export default function PricingPage() {
       </section>
 
       {/* Final CTA - Clean */}
-      <section className="border-t border-zinc-900 py-32">
+      <section className="border-t border-white/10 py-32">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-5xl font-bold mb-6">
             Ready to start?
           </h2>
-          <p className="text-lg sm:text-xl text-zinc-400 mb-12">
+          <p className="text-lg sm:text-xl text-white/60 mb-12">
             Join 100K+ men taking control of their skin
           </p>
           <Link
             href="/analysis"
-            className="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-lg font-semibold hover:bg-zinc-100 transition text-lg"
+            className="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-lg font-semibold hover:bg-white/90 transition text-lg"
           >
             Start free analysis
             <ArrowRight className="w-5 h-5" />
@@ -164,14 +166,14 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 py-12">
+      <footer className="border-t border-white/10 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 text-sm text-zinc-600">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 text-sm text-white/40">
             <div>© 2026 Twacha Labs</div>
             <div className="flex gap-8">
-              <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
-              <Link href="/terms" className="hover:text-white transition">Terms</Link>
-              <Link href="/contact" className="hover:text-white transition">Contact</Link>
+              <Link href="/privacy" className="hover:text-white/80 transition">Privacy</Link>
+              <Link href="/terms" className="hover:text-white/80 transition">Terms</Link>
+              <Link href="/contact" className="hover:text-white/80 transition">Contact</Link>
             </div>
           </div>
         </div>
@@ -180,11 +182,11 @@ export default function PricingPage() {
   );
 }
 
-function Feature({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
+function Feature({ children }: { children: React.ReactNode }) {
   return (
     <li className="flex items-start gap-3">
-      <Check className={`w-5 h-5 flex-shrink-0 mt-0.5 ${dark ? 'text-black' : 'text-zinc-500'}`} />
-      <span className={`text-sm ${dark ? 'text-zinc-700' : 'text-zinc-400'}`}>
+      <Check className="w-5 h-5 flex-shrink-0 mt-0.5 text-white/40" />
+      <span className="text-sm text-white/60">
         {children}
       </span>
     </li>
@@ -195,7 +197,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
     <div>
       <h3 className="text-xl font-semibold mb-3">{question}</h3>
-      <p className="text-zinc-400 leading-relaxed">{answer}</p>
+      <p className="text-white/60 leading-relaxed">{answer}</p>
     </div>
   );
 }
