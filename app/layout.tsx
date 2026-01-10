@@ -14,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Twacha Labs - AI-Powered Skin Analysis",
-  description: "AI-powered cosmetic skin analysis. Get personalized skincare insights and recommendations for your routine.",
+  title: "Twacha Labs - Skin Analysis Reimagined",
+  description: "AI-powered analysis designed specifically for men's skin. No BS, just results.",
 };
 
 export default function RootLayout({

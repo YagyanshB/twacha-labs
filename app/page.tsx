@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
@@ -42,21 +42,50 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('Analysis failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Analysis failed');
       }
 
       const data = await response.json();
-      setAnalysisResult(data);
+      
+      // Map API response to component-expected format
+      // API returns: { verdict, diagnosis, confidence, imageUrls, imagePath }
+      // Components expect: { score, verdict, analysis, recommendation, imagePath }
+      const mappedResult: AnalysisResult = {
+        score: Math.round((data.confidence || 0.7) * 100), // Convert confidence (0-1) to score (0-100)
+        verdict: data.verdict || 'UNKNOWN',
+        analysis: data.diagnosis || 'Analysis completed',
+        recommendation: getRecommendationFromVerdict(data.verdict),
+        imagePath: data.imagePath || data.imageUrls?.[0] || null,
+      };
+      
+      setAnalysisResult(mappedResult);
       setFunnelState('email-gate');
     } catch (error) {
       console.error('Analysis error:', error);
       setAnalysisResult({
         score: 65,
         verdict: 'CAUTION',
-        analysis: 'Moderate skin congestion detected. Some areas show inflammation.',
+        analysis: 'Unable to complete analysis. Please try again.',
         recommendation: 'The Founder\'s Kit',
       });
       setFunnelState('email-gate');
+    }
+  };
+
+  // Helper function to generate recommendation based on verdict
+  const getRecommendationFromVerdict = (verdict: string): string => {
+    switch (verdict) {
+      case 'CLEAR':
+        return 'Maintenance Routine';
+      case 'POP':
+        return 'Extraction Protocol';
+      case 'STOP':
+        return 'Professional Consultation Recommended';
+      case 'DOCTOR':
+        return 'Professional Evaluation Recommended';
+      default:
+        return 'The Founder\'s Kit';
     }
   };
 
@@ -105,7 +134,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <Navbar onStartScan={handleStartScan} onOpenModal={() => setIsProductModalOpen(true)} />
+            <Navbar onStartScan={handleStartScan} />
             <HeroSection onStartScan={handleStartScan} />
             <DemoSection onStartScan={handleStartScan} />
             <BenefitsSection />
@@ -180,17 +209,7 @@ export default function Home() {
 }
 
 // Navigation
-function Navbar({ onStartScan, onOpenModal }: { onStartScan: () => void; onOpenModal: () => void }) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
+function Navbar({ onStartScan }: { onStartScan: () => void }) {
   return (
     <nav>
       <div className="nav-container">
@@ -231,7 +250,7 @@ function HeroSection({ onStartScan }: { onStartScan: () => void }) {
         <h1>
           Your skin,
           <span>decoded in seconds</span>
-              </h1>
+        </h1>
         <p>AI-powered analysis designed specifically for men's skin. No BS, just results.</p>
         <div className="hero-cta">
           <button onClick={onStartScan} className="primary-cta">Start free scan</button>
@@ -291,7 +310,7 @@ function DemoSection({ onStartScan }: { onStartScan: () => void }) {
                   <p style={{ color: 'var(--gray)', fontSize: '0.9rem' }}>Analysing skin texture...</p>
                 </div>
               </div>
-                </div>
+            </div>
           </div>
         </div>
       </div>
@@ -320,7 +339,7 @@ function BenefitsSection() {
             <div className="benefit-number" style={{ color: '#e0e0e0' }}>03</div>
             <h3>Actually works</h3>
             <p>Recommendations based on clinical research, not marketing. Simple routines you'll actually stick to.</p>
-                </div>
+          </div>
         </div>
       </div>
     </section>
@@ -352,7 +371,7 @@ function ProductSection({ onOpenModal }: { onOpenModal: () => void }) {
           </div>
 
           <div className="product-price">
-            <span className="price">£24</span>
+            <span className="price">£49</span>
             <span className="price-note">One-time purchase • Free shipping</span>
           </div>
 
@@ -447,8 +466,8 @@ function Footer() {
           <a href="#">Privacy</a>
           <a href="#">Terms</a>
           <a href="#">Contact</a>
+        </div>
       </div>
-    </div>
     </footer>
   );
 }

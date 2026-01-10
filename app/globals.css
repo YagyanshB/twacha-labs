@@ -21,8 +21,6 @@ body {
   background-color: var(--white);
   line-height: 1.6;
   overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Navigation */
@@ -116,7 +114,6 @@ nav {
   justify-content: center;
   background: linear-gradient(to bottom, #ffffff 0%, #f8f8f8 100%);
   padding: 0 2rem;
-  padding-top: 80px;
 }
 
 .hero-content {
@@ -242,6 +239,14 @@ nav {
   justify-content: center;
   color: var(--black);
   padding: 2rem;
+}
+
+.face-scan-container {
+  text-align: center;
+}
+
+.face-outline {
+  margin: 0 auto;
 }
 
 /* Benefits Section */

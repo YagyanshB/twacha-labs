@@ -16,7 +16,12 @@ export async function POST(req: Request) {
     // Safety check to prevent crashing if keys are missing
     if (!supabaseUrl || !supabaseKey) {
       console.error("Build/Runtime Error: Missing Supabase Keys");
-      return NextResponse.json({ error: "Server Config Error" }, { status: 500 });
+      return NextResponse.json({ error: "Server Config Error: Missing Supabase credentials" }, { status: 500 });
+    }
+
+    if (!openaiKey) {
+      console.error("Build/Runtime Error: Missing OpenAI API Key");
+      return NextResponse.json({ error: "Server Config Error: Missing OpenAI API key" }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -24,39 +29,59 @@ export async function POST(req: Request) {
 
     // --- READ REQUEST ---
     const body = await req.json();
-    const { image } = body;
+    const { images, image } = body; // Support both 'images' (array) and 'image' (single) for backward compatibility
 
-    if (!image) {
+    // Normalize to array: if 'images' is provided, use it; otherwise use 'image' as single-item array
+    const imageArray = images || (image ? [image] : []);
+    
+    if (!imageArray || imageArray.length === 0) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    // --- A. UPLOAD TO STORAGE ---
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, 'base64');
-    const fileName = `scan_${Date.now()}.jpg`;
+    // Use the first image for analysis (typically the center/primary view)
+    const primaryImage = imageArray[0];
 
-    // Upload to Supabase Storage (hardcoded bucket: 'scan-images')
-    let imageUrl = "";
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('scan-images')
-      .upload(fileName, buffer, { contentType: 'image/jpeg' });
+    // --- A. UPLOAD ALL IMAGES TO STORAGE ---
+    const timestamp = Date.now();
+    const uploadedImageUrls: string[] = [];
 
-    if (uploadError) {
-      // Log detailed error but don't crash - allow AI analysis to proceed
-      console.error("❌ Supabase Storage Upload Failed:");
-      console.error("   Error Message:", uploadError.message);
-      console.error("   Error Details:", JSON.stringify(uploadError, null, 2));
-      console.error("   File Name:", fileName);
-      // Continue execution - AI analysis will still work
-    } else {
-      // Successfully uploaded, get public URL
-      const { data: publicUrlData } = supabase.storage.from('scan-images').getPublicUrl(fileName);
-      imageUrl = publicUrlData.publicUrl;
-      console.log("✅ Image uploaded successfully:", imageUrl);
+    for (let i = 0; i < imageArray.length; i++) {
+      const img = imageArray[i];
+      const base64Data = img.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, 'base64');
+      const fileName = `scan_${timestamp}_${i + 1}.jpg`;
+
+      try {
+        // Upload to Supabase Storage bucket 'scan-images'
+        const { data: uploadData, error: uploadError } = await supabase
+          .storage
+          .from('scan-images')
+          .upload(fileName, buffer, { 
+            contentType: 'image/jpeg',
+            upsert: false // Don't overwrite existing files
+          });
+
+        if (uploadError) {
+          console.error(`❌ Supabase Storage Upload Failed for image ${i + 1}:`);
+          console.error("   Error Message:", uploadError.message);
+          console.error("   Error Details:", JSON.stringify(uploadError, null, 2));
+          // Continue with other images
+        } else {
+          // Successfully uploaded, get public URL
+          const { data: publicUrlData } = supabase.storage.from('scan-images').getPublicUrl(fileName);
+          uploadedImageUrls.push(publicUrlData.publicUrl);
+          console.log(`✅ Image ${i + 1} uploaded successfully:`, publicUrlData.publicUrl);
+        }
+      } catch (uploadErr) {
+        console.error(`❌ Error uploading image ${i + 1}:`, uploadErr);
+        // Continue with other images
+      }
     }
 
-    // --- B. ANALYZE WITH GPT-4o ---
+    // Use the first uploaded URL for database storage, or primary image if upload failed
+    const primaryImageUrl = uploadedImageUrls[0] || primaryImage;
+
+    // --- B. ANALYZE WITH GPT-4o (using primary image) ---
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -85,7 +110,7 @@ Return ONLY valid JSON. No markdown, no code blocks, no explanations outside the
           role: "user",
           content: [
             { type: "text", text: "Analyze this image." },
-            { type: "image_url", image_url: { url: image } },
+            { type: "image_url", image_url: { url: primaryImage } },
           ],
         },
       ],
@@ -113,17 +138,35 @@ Return ONLY valid JSON. No markdown, no code blocks, no explanations outside the
     }
 
     // --- D. SAVE TO DB ---
-    // Only save if we have a valid image URL (upload succeeded)
-    if (imageUrl) {
-        await supabase.from('scans').insert({
-        image_url: imageUrl,
-        ai_diagnosis: aiResult.diagnosis,
-        ai_verdict: aiResult.verdict,
-        ai_confidence: aiResult.confidence || 0
+    // Only save if we have at least one uploaded image URL
+    if (uploadedImageUrls.length > 0) {
+      try {
+        const { error: dbError } = await supabase.from('scans').insert({
+          image_url: primaryImageUrl, // Store primary image URL
+          image_urls: uploadedImageUrls.length > 1 ? uploadedImageUrls : null, // Store all URLs if multiple
+          ai_diagnosis: aiResult.diagnosis,
+          ai_verdict: aiResult.verdict,
+          ai_confidence: aiResult.confidence || 0
         });
+
+        if (dbError) {
+          console.error("❌ Database insert error:", dbError);
+          // Don't fail the request if DB insert fails
+        } else {
+          console.log("✅ Scan saved to database");
+        }
+      } catch (dbErr) {
+        console.error("❌ Database error:", dbErr);
+        // Continue - return analysis result even if DB save fails
+      }
     }
 
-    return NextResponse.json(aiResult);
+    // Return analysis result with image URLs
+    return NextResponse.json({
+      ...aiResult,
+      imageUrls: uploadedImageUrls, // Include uploaded URLs in response
+      imagePath: primaryImageUrl // For backward compatibility
+    });
 
   } catch (error: any) {
     console.error("🔥 SERVER ERROR:", error);
