@@ -273,9 +273,9 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
         <div className="nav-right">
           <ul className="nav-links">
             <li><a href="#how" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' }); }}>How it works</a></li>
-            <li><a href="#report" onClick={(e) => { e.preventDefault(); document.getElementById('report')?.scrollIntoView({ behavior: 'smooth' }); }}>Sample report</a></li>
+            <li><a href="/pricing" onClick={(e) => { e.preventDefault(); window.location.href = '/pricing'; }}>Pricing</a></li>
           </ul>
-          <button onClick={onStartScan} className="scan-button">Start scanning</button>
+          <button onClick={onStartScan} className="scan-button">Start free</button>
         </div>
       </div>
     </nav>
@@ -312,7 +312,7 @@ function DemoSection({ onStartScan }: { onStartScan: () => void }) {
         <div className="demo-content">
           <h2>Scan. Analyse. Improve.</h2>
           <p>One selfie gives you everything you need to know about your skin. Our AI identifies issues you can't see and provides a personalised routine that actually works.</p>
-          <button onClick={onStartScan} className="primary-cta" style={{ background: 'white', color: 'black' }}>Get started</button>
+          <button onClick={onStartScan} className="primary-cta" style={{ background: 'white', color: 'black' }}>Start free analysis</button>
         </div>
         <div className="demo-visual">
           <div className="phone-mockup">
@@ -386,47 +386,63 @@ function BenefitsSection() {
   );
 }
 
-// Product Section
+// Product Section - Coming Soon
 function ProductSection({ onOpenModal }: { onOpenModal: () => void }) {
   return (
-    <section className="product-section">
-      <div className="product-container">
-        <div className="product-content">
-          <h2>The complete kit</h2>
-          <p>Everything you need for professional skin analysis at home</p>
-          
-          <div className="product-features">
-            <div className="product-feature">
-              <h4>AI Camera Module</h4>
-              <p>Medical-grade imaging technology designed for accurate skin analysis</p>
-            </div>
-            <div className="product-feature">
-              <h4>Smart Analysis</h4>
-              <p>Instant results with personalised recommendations tailored to your skin</p>
-            </div>
-            <div className="product-feature">
-              <h4>Progress Tracking</h4>
-              <p>Monitor improvements over time with detailed insights and trends</p>
-            </div>
-          </div>
-
-          <div className="product-price">
-            <span className="price">£49</span>
-            <span className="price-note">One-time purchase • Free shipping</span>
-          </div>
-
-          <button onClick={onOpenModal} className="primary-cta">Pre-order now</button>
+    <section className="product-section" style={{ background: '#18181b', padding: '5rem 2rem', borderTop: '1px solid #27272a' }}>
+      <div className="product-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <span style={{ color: '#a1a1aa', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coming Soon</span>
+          <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginTop: '0.5rem', marginBottom: '1rem', color: '#fff' }}>
+            Twacha Pro Kit
+          </h2>
+          <p style={{ color: '#a1a1aa', maxWidth: '42rem', margin: '0 auto' }}>
+            Professional-grade hardware for clinic-level analysis at home. 
+            Join the waitlist for early access.
+          </p>
         </div>
         
-        <div className="product-visual">
-          <div className="product-image-container">
-            <img 
-              src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDYwMCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPCEtLSBCYWNrZ3JvdW5kIGdyYWRpZW50IC0tPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZ0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzFhMWExYTtzdG9wLW9wYWNpdHk6MSIgLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eToxIiAvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIAogICAgPCEtLSBTaGFkb3cgZmlsdGVyIC0tPgogICAgPGZpbHRlciBpZD0ic2hhZG93IiB4PSItNTAlIiB5PSItNTAlIiB3aWR0aD0iMjAwJSIgaGVpZ2h0PSIyMDAlIj4KICAgICAgPGZlR2F1c3NpYW5CbHVyIGluPSJTb3VyY2VBbHBoYSIgc3RkRGV2aWF0aW9uPSI1Ii8+CiAgICAgIDxmZU9mZnNldCBkeD0iMCIgZHk9IjEwIiByZXN1bHQ9Im9mZnNldGJsdXIiLz4KICAgICAgPGZlRmxvb2QgZmxvb2QtY29sb3I9IiMwMDAwMDAiIGZsb29kLW9wYWNpdHk9IjAuMyIvPgogICAgICA8ZmVDb21wb3NpdGUgaW4yPSJvZmZzZXRibHVyIiBvcGVyYXRvcj0iaW4iLz4KICAgICAgPGZlTWVyZ2U+CiAgICAgICAgPGZlTWVyZ2VOb2RlLz4KICAgICAgICA8ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz4KICAgICAgPC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgoKICA8IS0tIE1haW4gY2FzZSAtLT4KICA8cmVjdCB4PSIxMDAiIHk9IjE1MCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSIyMDAiIHJ4PSIyMCIgZmlsbD0idXJsKCNiZ0dyYWRpZW50KSIgZmlsdGVyPSJ1cmwoI3NoYWRvdykiLz4KICAKICA8IS0tIENhc2UgbGlkIChvcGVuKSAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMDAsIDEyMCkgcm90YXRlKC0xNSAyMDAgMCkiPgogICAgPHJlY3QgeD0iMCIgeT0iLTE1MCIgd2lkdGg9IjQwMCIgaGVpZ2h0PSIxNTAiIHJ4PSIyMCIgZmlsbD0idXJsKCNiZ0dyYWRpZW50KSIvPgogICAgPCEtLSBFbWJvc3NlZCBsb2dvIG9uIGxpZCAtLT4KICAgIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE4MCwgLTEwMCkiIG9wYWNpdHk9IjAuMyI+CiAgICAgIDxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjQiIGZpbGw9IiNmZmYiLz4KICAgICAgPGNpcmNsZSBjeD0iMjAiIGN5PSI4IiByPSIzIiBmaWxsPSIjZmZmIiBvcGFjaXR5PSIwLjgiLz4KICAgICAgPGNpcmNsZSBjeD0iMzIiIGN5PSIyMCIgcj0iMyIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC44Ii8+CiAgICAgIDxjaXJjbGUgY3g9IjIwIiBjeT0iMzIiIHI9IjMiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuOCIvPgogICAgICA8Y2lyY2xlIGN4PSI4IiBjeT0iMjAiIHI9IjMiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuOCIvPgogICAgPC9nPgogICAgPCEtLSBCcmFuZCB0ZXh0IC0tPgogICAgPHRleHQgeD0iMjAwIiB5PSItNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjMwMCIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC41IiBsZXR0ZXItc3BhY2luZz0iNCI+VFdBQ0hBIExBQlM8L3RleHQ+CiAgPC9nPgogIAogIDwhLS0gSW50ZXJpb3IgY29tcGFydG1lbnRzIC0tPgogIDxyZWN0IHg9IjEyMCIgeT0iMTcwIiB3aWR0aD0iMzYwIiBoZWlnaHQ9IjE2MCIgZmlsbD0iIzBhMGEwYSIgcng9IjEwIi8+CiAgCiAgPCEtLSBDYW1lcmEgbW9kdWxlIC0tPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE4MCwgMjMwKSI+CiAgICA8IS0tIExlbnMgaG91c2luZyAtLT4KICAgIDxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSI0MCIgZmlsbD0iIzFhMWExYSIvPgogICAgPGNpcmNsZSBjeD0iMCIgY3k9IjAiIHI9IjM1IiBmaWxsPSIjMDAwIi8+CiAgICA8IS0tIEJsdWUgYWNjZW50IHJpbmcgLS0+CiAgICA8Y2lyY2xlIGN4PSIwIiBjeT0iMCIgcj0iMzAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzAwNjZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBvcGFjaXR5PSIwLjgiLz4KICAgIDwhLS0gSW5uZXIgbGVucyAtLT4KICAgIDxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSIyNSIgZmlsbD0iIzBhMGEwYSIvPgogICAgPCEtLSBMZW5zIHJlZmxlY3Rpb24gLS0+CiAgICA8ZWxsaXBzZSBjeD0iLTEwIiBjeT0iLTEwIiByeD0iOCIgcnk9IjEyIiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjEiLz4KICA8L2c+CiAgCiAgPCEtLSBUZXh0IGxhYmVscyBpbiBjYXNlIC0tPgogIDx0ZXh0IHg9IjMwMCIgeT0iMjIwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuNSI+QUkgQ0FNRVJBIE1PRFVMRTI8L3RleHQ+CiAgPHRleHQgeD0iMzAwIiB5PSIyNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC4zIj5NZWRpY2FsLWdyYWRlIGltYWdpbmc8L3RleHQ+CiAgCiAgPHRleHQgeD0iMzAwIiB5PSIyODAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC41Ij5JTlNUQU5UIEFOQUxZU0lTPC90ZXh0PgogIDx0ZXh0IHg9IjMwMCIgeT0iMzAwIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiNmZmYiIG9wYWNpdHk9IjAuMyI+MzAtc2Vjb25kIHJlc3VsdHM8L3RleHQ+CiAgCiAgPCEtLSBTdWJ0bGUgZ3JpZCBwYXR0ZXJuIG9uIGludGVyaW9yIC0tPgogIDxnIG9wYWNpdHk9IjAuMDUiPgogICAgPGxpbmUgeDE9IjI1MCIgeTE9IjE3MCIgeDI9IjI1MCIgeTI9IjMzMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjAuNSIvPgogICAgPGxpbmUgeDE9IjM3MCIgeTE9IjE3MCIgeDI9IjM3MCIgeTI9IjMzMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjAuNSIvPgogICAgPGxpbmUgeDE9IjEyMCIgeTE9IjI1MCIgeDI9IjQ4MCIgeTI9IjI1MCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjAuNSIvPgogIDwvZz4KPC9zdmc+" 
-              alt="Twacha Labs Kit" 
-              className="product-image"
-            />
-            <div className="product-glow"></div>
-          </div>
+        <div style={{ maxWidth: '28rem', margin: '0 auto', background: '#000', border: '1px solid #27272a', borderRadius: '0.75rem', padding: '2rem' }}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
+              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Medical-grade imaging
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
+              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Hospital-level accuracy
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
+              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Includes 1 year premium
+            </li>
+          </ul>
+          
+          <button 
+            onClick={onOpenModal}
+            style={{ 
+              width: '100%', 
+              background: '#27272a', 
+              color: '#71717a', 
+              padding: '0.75rem', 
+              borderRadius: '0.5rem', 
+              fontWeight: '500',
+              cursor: 'not-allowed',
+              border: 'none'
+            }}
+            disabled
+          >
+            Notify me when available
+          </button>
+          <p style={{ fontSize: '0.75rem', color: '#52525b', textAlign: 'center', marginTop: '0.75rem' }}>
+            Expected: Q2 2026
+          </p>
         </div>
       </div>
     </section>
@@ -477,7 +493,7 @@ function ReportPreviewSection({ onStartScan }: { onStartScan: () => void }) {
           </div>
 
           <div className="report-cta">
-            <button onClick={onStartScan} className="primary-cta">Get your analysis</button>
+            <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
           </div>
         </div>
       </div>
@@ -491,7 +507,7 @@ function FinalCTASection({ onStartScan }: { onStartScan: () => void }) {
     <section className="final-cta">
       <h2>Ready to level up your skin?</h2>
       <p>Join thousands of men taking control of their skin health. Free analysis, no commitment.</p>
-      <button onClick={onStartScan} className="primary-cta">Start your scan</button>
+      <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
     </section>
   );
 }

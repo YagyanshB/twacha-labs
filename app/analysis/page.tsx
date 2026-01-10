@@ -1,14 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import CameraCapture from './components/CameraCapture';
+import UpgradePrompt from '../components/UpgradePrompt';
+import { canAnalyze, incrementUsage, getUserUsage } from '@/lib/usage';
 
 export default function AnalysisPage() {
   const router = useRouter();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [step, setStep] = useState<'capture' | 'preview' | 'analyzing'>('capture');
+  const [canProceed, setCanProceed] = useState(true);
+  const [usageReason, setUsageReason] = useState('');
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [analysisCount, setAnalysisCount] = useState(0);
+  
+  useEffect(() => {
+    // Check usage limit (replace with real user ID from auth)
+    const userId = 'temp_user_id'; // TODO: Replace with actual user ID from auth
+    const check = canAnalyze(userId);
+    const usage = getUserUsage(userId);
+    
+    setCanProceed(check.allowed);
+    setAnalysisCount(usage.analysisCount);
+    if (!check.allowed) {
+      setUsageReason(check.reason || '');
+      setShowUpgradePrompt(true);
+    }
+  }, []);
 
   const handleCapture = (imageData: string) => {
     setCapturedImage(imageData);
@@ -22,6 +42,15 @@ export default function AnalysisPage() {
 
   const handleAnalyze = async () => {
     if (!capturedImage) return;
+    
+    // Check usage limit again before analyzing
+    const userId = 'temp_user_id'; // TODO: Replace with actual user ID
+    const check = canAnalyze(userId);
+    
+    if (!check.allowed) {
+      setShowUpgradePrompt(true);
+      return;
+    }
     
     setStep('analyzing');
     
@@ -44,8 +73,13 @@ export default function AnalysisPage() {
 
       const data = await response.json();
       
+      // Increment usage after successful analysis
+      incrementUsage(userId);
+      const updatedUsage = getUserUsage(userId);
+      setAnalysisCount(updatedUsage.analysisCount);
+      
       // Navigate to results page or handle result
-      // For now, redirect to home with result
+      // For now, redirect to home page
       router.push('/?result=success');
     } catch (error) {
       console.error('Analysis error:', error);
@@ -53,6 +87,16 @@ export default function AnalysisPage() {
       setStep('preview');
     }
   };
+
+  if (showUpgradePrompt && !canProceed) {
+    return (
+      <UpgradePrompt 
+        variant="limit-reached"
+        analysisCount={analysisCount}
+        onClose={() => router.push('/')}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
