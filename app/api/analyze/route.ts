@@ -87,38 +87,96 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: `You are a Cosmetic Skin Analysis AI. Analyze skin images and provide cosmetic advice only. This is NOT medical diagnosis.
-
-IMPORTANT: Focus on cosmetic appearance and skincare routine recommendations. For any serious medical concerns, always recommend consulting a dermatologist.
-
-VERDICT RULES (STRICT):
-- If no distinct blemish is found -> Verdict: "CLEAR"
-- If visible whitehead/pustule (surface-level, safe to extract) -> Verdict: "POP"
-- If red/inflamed/deep cyst (do not extract) -> Verdict: "STOP"
-- If concerning/unknown appearance that may need professional evaluation -> Verdict: "DOCTOR"
-
-OUTPUT FORMAT (STRICT JSON ONLY):
-{
-  "verdict": "CLEAR" | "POP" | "STOP" | "DOCTOR",
-  "diagnosis": "Cosmetic observation and skincare advice (not medical diagnosis)",
-  "confidence": 0.0-1.0
-}
-
-Return ONLY valid JSON. No markdown, no code blocks, no explanations outside the JSON.`
+          content: `
+        You are a highly experienced cosmetic dermatologist specializing in visual skin assessment.
+        
+        IMPORTANT SCOPE:
+        - This is a cosmetic skin analysis, NOT a medical diagnosis.
+        - Do NOT name diseases.
+        - Do NOT suggest prescriptions.
+        - Provide skincare, lifestyle, and routine-based insights only.
+        - If something appears medically concerning, advise consulting a dermatologist.
+        
+        ANALYSIS APPROACH (THINK STEP-BY-STEP INTERNALLY):
+        1. Assess overall skin quality (texture, clarity, oil balance, tone uniformity).
+        2. Identify visible concerns (blemishes, congestion, redness, irritation, uneven texture).
+        3. Infer likely skin behavior (oil production, sensitivity, dehydration, barrier stress).
+        4. Evaluate whether the visible blemish is:
+           - superficial
+           - inflamed
+           - deep
+           - unclear / concerning
+        5. Provide a professional cosmetic interpretation as a dermatologist would explain to a patient.
+        
+        VERDICT RULES (STRICT):
+        - CLEAR → No distinct blemish or concern
+        - POP → Surface-level whitehead/pustule with minimal inflammation
+        - STOP → Red, inflamed, deep, or irritated blemish (do NOT extract)
+        - DOCTOR → Unclear, unusual, or concerning appearance
+        
+        OUTPUT FORMAT (STRICT JSON ONLY):
+        
+        {
+          "verdict": "CLEAR" | "POP" | "STOP" | "DOCTOR",
+          "skin_summary": "High-level professional assessment of the skin's current condition (2–3 sentences).",
+          "key_observations": [
+            "Observation 1",
+            "Observation 2",
+            "Observation 3"
+          ],
+          "likely_skin_type": "Oily | Dry | Combination | Normal | Dehydrated | Sensitive (best estimate)",
+          "routine_insights": [
+            "Insight about cleansing, over-washing, product misuse, or lack of hydration",
+            "Insight about oil balance, barrier health, or irritation"
+          ],
+          "recommended_focus": [
+            "Immediate focus (next 7 days)",
+            "Short-term focus (next 2–4 weeks)"
+          ],
+          "confidence": 0.0–1.0
+        }
+        
+        STRICT RULES:
+        - Output ONLY valid JSON
+        - No markdown
+        - No explanations outside JSON
+        - Be calm, professional, and dermatologist-level in tone
+        `
         },
         {
           role: "user",
           content: [
-            { type: "text", text: "Analyze this image." },
-            { type: "image_url", image_url: { url: primaryImage } },
-          ],
-        },
+            {
+              type: "text",
+              text: "Analyze this skin image and provide a cosmetic assessment in the specified JSON format."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: primaryImage // Base64 image data URI
+              }
+            }
+          ]
+        }
       ],
-      response_format: { type: "json_object" },
+      max_tokens: 1000
     });
 
     // --- C. SAFE JSON PARSING (strip markdown if present) ---
-    let rawContent = response.choices[0].message.content || "{}";
+    let rawContent = response.choices[0]?.message?.content || "{}";
+    
+    if (!rawContent || rawContent === "{}") {
+      console.error("❌ OpenAI returned empty response");
+      rawContent = JSON.stringify({
+        verdict: "DOCTOR",
+        skin_summary: "Unable to analyze - please try again",
+        key_observations: [],
+        likely_skin_type: "Unknown",
+        routine_insights: [],
+        recommended_focus: [],
+        confidence: 0.0
+      });
+    }
     
     // Strip markdown code blocks if OpenAI returns them (e.g., ```json ... ```)
     rawContent = rawContent.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
@@ -126,6 +184,11 @@ Return ONLY valid JSON. No markdown, no code blocks, no explanations outside the
     let aiResult;
     try {
       aiResult = JSON.parse(rawContent);
+      
+      // Map new response format to legacy format for backward compatibility
+      if (!aiResult.diagnosis && aiResult.skin_summary) {
+        aiResult.diagnosis = aiResult.skin_summary;
+      }
     } catch (parseError) {
       console.error("❌ JSON Parse Error:", parseError);
       console.error("   Raw Content:", rawContent);
@@ -133,6 +196,11 @@ Return ONLY valid JSON. No markdown, no code blocks, no explanations outside the
       aiResult = {
         verdict: "DOCTOR",
         diagnosis: "Unable to analyze - please try again",
+        skin_summary: "Unable to analyze - please try again",
+        key_observations: [],
+        likely_skin_type: "Unknown",
+        routine_insights: [],
+        recommended_focus: [],
         confidence: 0.0
       };
     }
