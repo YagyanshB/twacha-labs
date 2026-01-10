@@ -44,13 +44,18 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
   };
 
   // Simulate face detection conditions (UI only - no actual detection)
+  const simulateConditions = () => {
+    setFaceDetected(false);
+    setCentered(false);
+    setGoodLighting(false);
+    setCorrectDistance(false);
+    setTimeout(() => setFaceDetected(true), 500);
+    setTimeout(() => setCentered(true), 1000);
+    setTimeout(() => setGoodLighting(true), 1500);
+    setTimeout(() => setCorrectDistance(true), 2000);
+  };
+
   useEffect(() => {
-    const simulateConditions = () => {
-      setTimeout(() => setFaceDetected(true), 500);
-      setTimeout(() => setCentered(true), 1000);
-      setTimeout(() => setGoodLighting(true), 1500);
-      setTimeout(() => setCorrectDistance(true), 2000);
-    };
     simulateConditions();
   }, []);
 
