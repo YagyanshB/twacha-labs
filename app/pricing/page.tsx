@@ -22,7 +22,7 @@ export default function PricingPage() {
       period: '/mo',
       description: 'For serious skin progress.',
       cta: 'Go Premium',
-      popular: true, // This one will be Black to match your branding
+      popular: true,
       subtext: 'Billed £49 yearly (Save 17%)',
       features: [
         'Unlimited analyses',
@@ -51,11 +51,11 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white text-zinc-900 selection:bg-black selection:text-white">
       
-      {/* Simple Header */}
-      <header className="border-b border-zinc-100">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-zinc-100 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-xl font-bold tracking-tight">Twacha Labs</Link>
-          <Link href="/" className="flex items-center gap-2 text-sm font-medium text-zinc-500 hover:text-black">
+          <Link href="/" className="flex items-center gap-2 text-sm font-medium text-zinc-500 transition-colors hover:text-black">
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
         </div>
@@ -64,8 +64,8 @@ export default function PricingPage() {
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           
-          {/* Headline */}
-          <div className="mx-auto max-w-2xl text-center mb-20">
+          {/* Headlines */}
+          <div className="mx-auto max-w-2xl text-center mb-16">
             <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
               Simple pricing
             </h1>
@@ -74,46 +74,50 @@ export default function PricingPage() {
             </p>
           </div>
 
-          {/* Grid */}
-          <div className="mx-auto grid max-w-lg grid-cols-1 gap-8 lg:max-w-none lg:grid-cols-3">
+          {/* Pricing Grid */}
+          {/* Added 'items-start' to ensure cards don't stretch weirdly if content differs */}
+          <div className="mx-auto grid max-w-lg grid-cols-1 gap-8 lg:max-w-none lg:grid-cols-3 lg:items-start">
             {plans.map((plan) => (
               <div
                 key={plan.name}
-                className={`flex flex-col rounded-3xl p-8 transition-all duration-300 ${
+                className={`relative flex flex-col rounded-3xl p-8 transition-all duration-300 ${
                   plan.popular
-                    ? 'bg-black text-white shadow-2xl ring-1 ring-black'
-                    : 'bg-white text-zinc-900 ring-1 ring-zinc-200 hover:ring-zinc-300'
+                    ? 'z-10 -mt-4 mb-4 bg-black text-white shadow-2xl ring-1 ring-black lg:scale-105'
+                    : 'bg-white text-zinc-900 ring-1 ring-zinc-200 hover:ring-zinc-300 hover:shadow-lg'
                 }`}
               >
-                <div className="flex items-center justify-between gap-x-4">
+                {/* Fixed Badge: Floating Top Center */}
+                {plan.popular && (
+                  <div className="absolute -top-5 left-0 right-0 mx-auto w-32 rounded-full bg-zinc-800 px-3 py-1.5 text-center text-xs font-bold uppercase tracking-wider text-white shadow-md ring-4 ring-white">
+                    Most Popular
+                  </div>
+                )}
+
+                <div className="mb-6">
                   <h3 className={`text-lg font-semibold leading-8 ${plan.popular ? 'text-white' : 'text-zinc-900'}`}>
                     {plan.name}
                   </h3>
-                  {plan.popular && (
-                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold leading-5 text-black">
-                      POPULAR
+                  
+                  <p className={`mt-2 text-sm leading-6 ${plan.popular ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                    {plan.description}
+                  </p>
+                  
+                  <div className="mt-6 flex items-baseline gap-x-1">
+                    <span className="text-5xl font-bold tracking-tight">
+                      {plan.price}
                     </span>
-                  )}
-                </div>
-                
-                <p className={`mt-4 text-sm leading-6 ${plan.popular ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                  {plan.description}
-                </p>
-                
-                <div className="mt-6 flex items-baseline gap-x-1">
-                  <span className="text-5xl font-bold tracking-tight">
-                    {plan.price}
-                  </span>
-                  {plan.period && (
-                    <span className={`text-sm font-semibold leading-6 ${plan.popular ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                      {plan.period}
-                    </span>
-                  )}
+                    {plan.period && (
+                      <span className={`text-sm font-semibold leading-6 ${plan.popular ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                        {plan.period}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
+                {/* Button pushed to bottom of top section, before list */}
                 <a
                   href="#"
-                  className={`mt-8 block rounded-full px-3 py-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                  className={`mb-8 block w-full rounded-full px-3 py-3 text-center text-sm font-semibold leading-6 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                     plan.popular
                       ? 'bg-white text-black hover:bg-zinc-200'
                       : 'bg-black text-white hover:bg-zinc-800'
@@ -122,7 +126,8 @@ export default function PricingPage() {
                   {plan.cta}
                 </a>
 
-                <ul role="list" className={`mt-8 space-y-3 text-sm leading-6 xl:mt-10 ${plan.popular ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                {/* Feature List */}
+                <ul role="list" className={`space-y-3 text-sm leading-6 ${plan.popular ? 'text-zinc-300' : 'text-zinc-600'}`}>
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex gap-x-3">
                       <Check className={`h-6 w-5 flex-none ${plan.popular ? 'text-white' : 'text-black'}`} aria-hidden="true" />
