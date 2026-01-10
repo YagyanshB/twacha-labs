@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import StartFreeFlow, { StartFreeFlowData } from '../components/StartFreeFlow';
 import UpgradePrompt from '../components/UpgradePrompt';
+import ResultsDashboard from '../components/ResultsDashboard';
 import { canAnalyze, incrementUsage, getUserUsage } from '@/lib/usage';
+
+interface AnalysisResult {
+  score: number;
+  verdict: string;
+  analysis: string;
+  recommendation: string;
+  imagePath?: string | null;
+}
 
 export default function AnalysisPage() {
   const router = useRouter();
@@ -12,6 +21,8 @@ export default function AnalysisPage() {
   const [usageReason, setUsageReason] = useState('');
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [analysisCount, setAnalysisCount] = useState(0);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   useEffect(() => {
     // Check usage limit (replace with real user ID from auth)
@@ -27,6 +38,21 @@ export default function AnalysisPage() {
     }
   }, []);
 
+  const getRecommendationFromVerdict = (verdict: string): string => {
+    switch (verdict) {
+      case 'CLEAR':
+        return 'Maintenance Routine';
+      case 'POP':
+        return 'Extraction Protocol';
+      case 'STOP':
+        return 'Professional Consultation Recommended';
+      case 'DOCTOR':
+        return 'Professional Evaluation Recommended';
+      default:
+        return 'The Founder\'s Kit';
+    }
+  };
+
   const handleFlowComplete = async (data: StartFreeFlowData) => {
     if (!data.image) return;
     
@@ -38,6 +64,8 @@ export default function AnalysisPage() {
       setShowUpgradePrompt(true);
       return;
     }
+    
+    setIsAnalyzing(true);
     
     try {
       // Send to analysis API
@@ -65,13 +93,22 @@ export default function AnalysisPage() {
       const updatedUsage = getUserUsage(userId);
       setAnalysisCount(updatedUsage.analysisCount);
       
-      // Navigate to results page or handle result
-      // For now, redirect to home page
-      router.push('/?result=success');
+      // Map API response to component-expected format
+      const mappedResult: AnalysisResult = {
+        score: Math.round((result.confidence || 0.7) * 100),
+        verdict: result.verdict || 'UNKNOWN',
+        analysis: result.diagnosis || result.skin_summary || 'Analysis completed',
+        recommendation: getRecommendationFromVerdict(result.verdict),
+        imagePath: result.imagePath || result.imageUrls?.[0] || null,
+      };
+      
+      setAnalysisResult(mappedResult);
+      setIsAnalyzing(false);
     } catch (error) {
       console.error('Analysis error:', error);
-      // Show error and allow retry
-      router.push('/?error=analysis_failed');
+      setIsAnalyzing(false);
+      // Show error message but stay on page
+      alert('Analysis failed. Please try again.');
     }
   };
 
@@ -82,6 +119,29 @@ export default function AnalysisPage() {
         analysisCount={analysisCount}
         onClose={() => router.push('/')}
       />
+    );
+  }
+
+  // Show results if analysis is complete
+  if (analysisResult) {
+    return (
+      <ResultsDashboard
+        analysisResult={analysisResult}
+        email=""
+      />
+    );
+  }
+
+  // Show loading state
+  if (isAnalyzing) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-black border-t-transparent mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Analyzing your skin...</h2>
+          <p className="text-gray-500">This will take a few seconds</p>
+        </div>
+      </div>
     );
   }
 
