@@ -6,9 +6,8 @@ import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
 import ProductModal from './components/ProductModal';
-import SkinAnalysisFlow from './components/SkinAnalysisFlow';
 
-type FunnelState = 'landing' | 'analysis-flow' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
+type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
 
 interface AnalysisResult {
   score: number;
@@ -27,21 +26,10 @@ export default function Home() {
   const [userData, setUserData] = useState<{ photo: string; skinType: string; age: string } | null>(null);
 
   const handleStartScan = () => {
-    // Start with the new analysis flow
-    setFunnelState('analysis-flow');
+    // Redirect to analysis page with new StartFreeFlow
+    window.location.href = '/analysis';
   };
 
-  const handleAnalysisFlowComplete = (data: { photo: string; skinType: string; age: string }) => {
-    setUserData(data);
-    // Photo is always captured in the flow, proceed directly to analysis
-    if (data.photo) {
-      setCapturedImages([data.photo]);
-      handleAnalysis([data.photo]);
-    } else {
-      // Fallback: if no photo somehow, go to scanning
-      setFunnelState('scanning');
-    }
-  };
 
   const handleAnalysis = async (images: string[]) => {
     setCapturedImages(images);
@@ -153,20 +141,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <AnimatePresence mode="wait">
-        {funnelState === 'analysis-flow' && (
-          <motion.div
-            key="analysis-flow"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <SkinAnalysisFlow
-              onComplete={handleAnalysisFlowComplete}
-              onBack={() => setFunnelState('landing')}
-            />
-          </motion.div>
-        )}
-
         {funnelState === 'landing' && (
           <motion.div
             key="landing"
@@ -400,8 +374,8 @@ function ProductSection({ onOpenModal }: { onOpenModal: () => void }) {
             Professional-grade hardware for clinic-level analysis at home. 
             Join the waitlist for early access.
           </p>
-        </div>
-        
+            </div>
+
         <div style={{ maxWidth: '28rem', margin: '0 auto', background: '#000', border: '1px solid #27272a', borderRadius: '0.75rem', padding: '2rem' }}>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
@@ -421,11 +395,11 @@ function ProductSection({ onOpenModal }: { onOpenModal: () => void }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               Includes 1 year premium
-            </li>
-          </ul>
-          
+                  </li>
+              </ul>
+
           <button 
-            onClick={onOpenModal}
+              onClick={onOpenModal}
             style={{ 
               width: '100%', 
               background: '#27272a', 
