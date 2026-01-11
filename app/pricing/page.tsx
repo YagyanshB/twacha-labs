@@ -40,7 +40,7 @@ const plans = [
     period: '/once',
     description: 'Deep-dive one-time analysis.',
     cta: 'Get Report',
-    href: '/checkout?plan=onetime',
+    href: 'https://buy.stripe.com/7sY6oHcwD1yz2KdfdA24002',
     popular: false,
     features: [
       'Full comprehensive report',
@@ -164,7 +164,7 @@ function PricingCard({ plan }: { plan: typeof plans[0] }) {
         )}
 
         {/* Button - matches landing page primary-cta */}
-        {plan.name === 'Premium' ? (
+        {plan.name === 'Premium' || plan.name === 'Report' ? (
           <a href={plan.href} target="_blank" rel="noopener noreferrer" className="primary-cta pricing-button">
             {plan.cta}
           </a>
