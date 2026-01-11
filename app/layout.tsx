@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter, JetBrains_Mono } from "next/font/google";
+import { Playfair_Display, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -12,12 +12,6 @@ const playfairDisplay = Playfair_Display({
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -51,7 +45,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${playfairDisplay.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${playfairDisplay.variable} ${inter.variable} antialiased`}
       >
         {children}
       </body>
