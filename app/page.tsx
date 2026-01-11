@@ -256,71 +256,16 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
   );
 }
 
-// Hero Section with Clinical Comparison
+// Hero Section
 function HeroSection({ onStartScan }: { onStartScan: () => void }) {
   return (
     <section className="hero">
       <div className="hero-content">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-6">
-          Precision Dermal Analysis for Men.
+        <h1>
+          Your skin,
+          <span>decoded in seconds</span>
         </h1>
-        <p className="max-w-2xl mx-auto text-lg text-gray-600 mb-4">
-          Stop guessing. Use clinical-grade computer vision and 15x macro-imaging to optimize your skin health. Built by AI engineers with NHS experience.
-        </p>
-        
-        {/* System Badge */}
-        <div className="flex justify-center mb-8">
-          <span className="border border-green-100 bg-green-50/50 text-green-700 font-mono text-[10px] px-2 py-0.5 rounded-full">
-            SYSTEM: OPERATIONAL
-          </span>
-        </div>
-
-        {/* Clinical Comparison */}
-        <div className="max-w-5xl mx-auto mb-8 px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Standard View Card */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
-              <div className="flex gap-4 justify-center items-center">
-                <span className="font-mono text-xs text-gray-600">[MODE: STANDARD_RGB]</span>
-                <span className="font-mono text-xs text-gray-600">[ZOOM: 1X]</span>
-              </div>
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                <div className="w-full h-full flex items-center justify-center">
-                  <svg viewBox="0 0 400 400" fill="none" className="w-full h-full">
-                    <rect width="400" height="400" fill="#f3f4f6"/>
-                    <circle cx="200" cy="200" r="80" fill="#d1d5db" opacity="0.5"/>
-                    <text x="200" y="200" textAnchor="middle" fill="#9ca3af" fontSize="16" fontFamily="system-ui">Standard Selfie</text>
-                  </svg>
-                </div>
-                <div className="absolute inset-0 bg-white/30 pointer-events-none"></div>
-                <div className="absolute inset-0 backdrop-blur-sm pointer-events-none"></div>
-              </div>
-            </div>
-
-            {/* Twacha Macro View Card */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-col gap-3">
-              <div className="flex gap-4 justify-center items-center">
-                <span className="font-mono text-xs text-gray-600">[MODE: TWACHA_MACRO]</span>
-                <span className="font-mono text-xs text-gray-600">[ZOOM: 15X]</span>
-              </div>
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-slate-800">
-                <div className="w-full h-full flex items-center justify-center">
-                  <svg viewBox="0 0 400 400" fill="none" className="w-full h-full">
-                    <rect width="400" height="400" fill="#1f2937"/>
-                    <rect x="150" y="150" width="100" height="100" fill="#374151" stroke="#10b981" strokeWidth="2"/>
-                    <circle cx="200" cy="200" r="30" fill="#4b5563"/>
-                    <circle cx="200" cy="200" r="15" fill="#6b7280"/>
-                    <text x="200" y="250" textAnchor="middle" fill="#10b981" fontSize="12" fontFamily="monospace">15x MACRO</text>
-                  </svg>
-                </div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2/5 h-2/5 border-2 border-green-500 rounded shadow-[0_0_0_2px_rgba(16,185,129,0.2)] pointer-events-none"></div>
-                {/* Scanning Animation Line */}
-                <div className="absolute left-0 right-0 h-0.5 bg-blue-500/50 shadow-[0_0_8px_rgba(59,130,246,0.6),0_0_16px_rgba(59,130,246,0.4)] pointer-events-none animate-scan-down"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <p>AI-powered analysis designed specifically for men's skin. No BS, just results.</p>
         <div className="hero-cta">
           <button onClick={onStartScan} className="primary-cta">Start free scan</button>
           <a href="#report" className="secondary-cta" onClick={(e) => { e.preventDefault(); document.getElementById('report')?.scrollIntoView({ behavior: 'smooth' }); }}>
