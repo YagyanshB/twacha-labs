@@ -16,18 +16,39 @@ const getSafeFallbackResponse = () => ({
 // Read knowledge base files
 const loadKnowledgeBase = () => {
   try {
+    console.log("📚 Loading knowledge base files...");
     const basePath = join(process.cwd(), 'knowledge-base');
-    const acneDiagnostics = readFileSync(join(basePath, 'acne_diagnostics.md'), 'utf-8');
-    const extractionSafety = readFileSync(join(basePath, 'extraction_safety_protocol.md'), 'utf-8');
-    const activeIngredients = readFileSync(join(basePath, 'active_ingredients.md'), 'utf-8');
+    console.log("   Base path:", basePath);
+    
+    const acneDiagnosticsPath = join(basePath, 'acne_diagnostics.md');
+    const extractionSafetyPath = join(basePath, 'extraction_safety_protocol.md');
+    const activeIngredientsPath = join(basePath, 'active_ingredients.md');
+    
+    console.log("   Checking files exist...");
+    
+    const acneDiagnostics = readFileSync(acneDiagnosticsPath, 'utf-8');
+    console.log("   ✅ acne_diagnostics.md loaded (", acneDiagnostics.length, "chars)");
+    
+    const extractionSafety = readFileSync(extractionSafetyPath, 'utf-8');
+    console.log("   ✅ extraction_safety_protocol.md loaded (", extractionSafety.length, "chars)");
+    
+    const activeIngredients = readFileSync(activeIngredientsPath, 'utf-8');
+    console.log("   ✅ active_ingredients.md loaded (", activeIngredients.length, "chars)");
+    
+    console.log("✅ All knowledge base files loaded successfully");
     
     return {
       acneDiagnostics,
       extractionSafety,
       activeIngredients
     };
-  } catch (error) {
-    console.error("❌ Error loading knowledge base:", error);
+  } catch (error: any) {
+    console.error("❌ Error loading knowledge base:");
+    console.error("   Message:", error.message);
+    console.error("   Code:", error.code);
+    console.error("   Path:", error.path);
+    console.error("   Stack:", error.stack);
+    console.warn("⚠️ Continuing without knowledge base - API will still work but with less context");
     return null;
   }
 };
@@ -145,9 +166,33 @@ export async function POST(req: Request) {
     const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     // Safety check to prevent crashing if keys are missing
+    console.log("🔍 Checking environment variables...");
+    console.log("   NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? `✅ Set (${supabaseUrl.length} chars, starts with: ${supabaseUrl.substring(0, 20)}...)` : "❌ Missing");
+    console.log("   SUPABASE_SERVICE_ROLE_KEY:", supabaseKey ? `✅ Set (${supabaseKey.length} chars)` : "❌ Missing");
+    console.log("   GOOGLE_GENERATIVE_AI_API_KEY:", geminiKey ? `✅ Set (${geminiKey.length} chars)` : "❌ Missing");
+    
     if (!supabaseUrl || !supabaseKey) {
-      console.error("Build/Runtime Error: Missing Supabase Keys");
-      return NextResponse.json({ error: "Server Config Error: Missing Supabase credentials" }, { status: 500 });
+      console.error("❌ Build/Runtime Error: Missing Supabase Keys");
+      console.error("   Missing:", {
+        supabaseUrl: !supabaseUrl,
+        supabaseKey: !supabaseKey
+      });
+      return NextResponse.json({ 
+        error: "Server Config Error: Missing Supabase credentials",
+        details: {
+          missingUrl: !supabaseUrl,
+          missingKey: !supabaseKey
+        }
+      }, { status: 500 });
+    }
+    
+    // Validate URL format
+    if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
+      console.error("❌ Invalid Supabase URL format. Expected URL like https://xxxxx.supabase.co");
+      console.error("   Current value:", supabaseUrl.substring(0, 50) + "...");
+      return NextResponse.json({ 
+        error: "Server Config Error: Invalid Supabase URL format. Should be a URL like https://xxxxx.supabase.co"
+      }, { status: 500 });
     }
 
     if (!geminiKey) {
@@ -461,7 +506,7 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
             aiResult = getSafeFallbackResponse();
           } else {
             // Ensure values are within valid ranges
-            aiResult = {
+      aiResult = {
               gags_score: Math.max(0, Math.min(44, Math.round(aiResult.gags_score))),
               triage_level: ['Routine', 'Monitor', 'Referral'].includes(aiResult.triage_level) 
                 ? aiResult.triage_level 
@@ -539,12 +584,22 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
     console.error("   Message:", error.message);
     console.error("   Name:", error.name);
     console.error("   Stack:", error.stack);
-    console.error("   Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     
-    // Return safe fallback instead of error
+    // Try to stringify error, but handle circular references
+    try {
+      console.error("   Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    } catch (stringifyError) {
+      console.error("   Could not stringify error (circular reference)");
+      console.error("   Error type:", typeof error);
+      console.error("   Error keys:", Object.keys(error || {}));
+    }
+    
+    // Return safe fallback with error details for debugging
     return NextResponse.json({
       ...getSafeFallbackResponse(),
-      error: "Analysis service temporarily unavailable"
+      error: "Analysis service temporarily unavailable",
+      errorMessage: error.message || "Unknown error",
+      errorName: error.name || "Error"
     }, { status: 500 });
   }
 }
