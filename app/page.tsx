@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import WaitlistForm from './components/WaitlistForm';
-import SystemStatusTicker from './components/SystemStatusTicker';
 import { Camera, Scissors, Bandage, FileText, ShieldCheck } from 'lucide-react';
 
 export default function Home() {
