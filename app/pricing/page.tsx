@@ -23,7 +23,7 @@ const plans = [
     period: '/mo',
     description: 'For serious skin progress.',
     cta: 'Go Premium',
-    href: '/checkout?plan=premium',
+    href: 'https://buy.stripe.com/7sYeVd8gndhhckNghE24001',
     popular: true,
     subtext: 'Billed £49 yearly (Save 17%)',
     features: [
@@ -164,9 +164,15 @@ function PricingCard({ plan }: { plan: typeof plans[0] }) {
         )}
 
         {/* Button - matches landing page primary-cta */}
-        <Link href={plan.href} className="primary-cta pricing-button">
-          {plan.cta}
-        </Link>
+        {plan.name === 'Premium' ? (
+          <a href={plan.href} target="_blank" rel="noopener noreferrer" className="primary-cta pricing-button">
+            {plan.cta}
+          </a>
+        ) : (
+          <Link href={plan.href} className="primary-cta pricing-button">
+            {plan.cta}
+          </Link>
+        )}
 
         {/* Features List */}
         <ul className="pricing-features">
