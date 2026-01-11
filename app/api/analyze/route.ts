@@ -584,10 +584,13 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
       const extractionStatus = aiResult.extraction_eligible === 'YES' ? 'Eligible' : 'Not Eligible';
       const aiVerdict = `${extractionStatus} | ${aiResult.triage_level}`;
       
+      // Combine summary, action_step, and scientific_note for database storage
+      const fullDiagnosis = `${aiResult.summary}\n\nAction: ${aiResult.action_step}\n\nTechnical: ${aiResult.scientific_note}`;
+      
       const { error: dbError } = await supabase.from('scans').insert({
         image_url: imageUrl,
         user_id: userId,
-        ai_diagnosis: aiResult.analysis_summary, // Full clinical report text
+        ai_diagnosis: fullDiagnosis, // Combined user-friendly and technical info
         ai_verdict: aiVerdict, // Extraction Eligibility + Triage Level
         ai_confidence: aiResult.ai_confidence
       });
