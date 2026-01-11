@@ -1,27 +1,63 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-// ❌ DO NOT initialize Supabase here. It causes the build error.
-
-// Safe fallback response structure
+// Safe fallback response structure (new format)
 const getSafeFallbackResponse = () => ({
-  verdict: "DOCTOR",
-  skin_summary: "Unable to complete analysis at this time. Please try again or consult a dermatologist for professional evaluation.",
-  diagnosis: "Unable to complete analysis at this time. Please try again or consult a dermatologist for professional evaluation.",
-  key_observations: [
-    "Analysis temporarily unavailable"
-  ],
-  likely_skin_type: "Unknown",
-  routine_insights: [
-    "Unable to provide insights at this time"
-  ],
-  recommended_focus: [
-    "Please retry the analysis",
-    "Consider consulting a dermatologist if concerns persist"
-  ],
-  confidence: 0.0
+  gags_score: 0,
+  triage_level: "Referral",
+  extraction_eligible: false,
+  analysis_summary: "Unable to complete analysis at this time. Please try again or consult a dermatologist for professional evaluation.",
+  ai_confidence: 0.0
 });
+
+// Read knowledge base files
+const loadKnowledgeBase = () => {
+  try {
+    const basePath = join(process.cwd(), 'knowledge-base');
+    const acneDiagnostics = readFileSync(join(basePath, 'acne_diagnostics.md'), 'utf-8');
+    const extractionSafety = readFileSync(join(basePath, 'extraction_safety_protocol.md'), 'utf-8');
+    const activeIngredients = readFileSync(join(basePath, 'active_ingredients.md'), 'utf-8');
+    
+    return {
+      acneDiagnostics,
+      extractionSafety,
+      activeIngredients
+    };
+  } catch (error) {
+    console.error("❌ Error loading knowledge base:", error);
+    return null;
+  }
+};
+
+// Convert image URL to base64 (for Supabase Storage URLs)
+const fetchImageAsBase64 = async (imageUrl: string): Promise<string | null> => {
+  try {
+    // If it's already a data URI, return as-is
+    if (imageUrl.startsWith('data:image/')) {
+      return imageUrl;
+    }
+    
+    // Fetch from URL (Supabase Storage or other)
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    
+    // Determine MIME type from response or default to jpeg
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    return `data:${contentType};base64,${base64}`;
+  } catch (error) {
+    console.error("❌ Error fetching image:", error);
+    return null;
+  }
+};
 
 // Validate and normalize image data
 const validateImageData = (imageData: string): string | null => {
@@ -31,19 +67,18 @@ const validateImageData = (imageData: string): string | null => {
   
   // Check if it's a valid data URI
   if (imageData.startsWith('data:image/')) {
-    // Extract base64 part
     const base64Match = imageData.match(/^data:image\/\w+;base64,(.+)$/);
     if (base64Match && base64Match[1]) {
-      // Validate base64 length (reasonable size check)
-      if (base64Match[1].length > 20 * 1024 * 1024) { // 20MB limit
+      // Validate base64 length (20MB limit)
+      if (base64Match[1].length > 20 * 1024 * 1024) {
         console.error("❌ Image too large (>20MB)");
         return null;
       }
-      return imageData; // Return as-is for GPT-4o Vision
+      return imageData;
     }
   }
   
-  // If it's already a URL, return as-is
+  // If it's a URL, it will be fetched later
   if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
     return imageData;
   }
@@ -81,12 +116,10 @@ const repairJSON = (rawContent: string): string => {
 
 export async function POST(req: Request) {
   try {
-    // ✅ Initialize INSIDE the function. 
-    // This way, it only runs when a user actually requests a scan, not during build.
-    
+    // Initialize Supabase and Gemini
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
+    const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     // Safety check to prevent crashing if keys are missing
     if (!supabaseUrl || !supabaseKey) {
@@ -94,186 +127,225 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Server Config Error: Missing Supabase credentials" }, { status: 500 });
     }
 
-    if (!openaiKey) {
-      console.error("Build/Runtime Error: Missing OpenAI API Key");
-      return NextResponse.json({ error: "Server Config Error: Missing OpenAI API key" }, { status: 500 });
+    if (!geminiKey) {
+      console.error("Build/Runtime Error: Missing Google Gemini API Key");
+      return NextResponse.json({ error: "Server Config Error: Missing Google Gemini API key" }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
-    const openai = new OpenAI({ 
-      apiKey: openaiKey,
-      timeout: 60000, // 60 second timeout
-      maxRetries: 2
-    });
+    const genAI = new GoogleGenerativeAI(geminiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // Load knowledge base
+    const knowledgeBase = loadKnowledgeBase();
+    if (!knowledgeBase) {
+      console.warn("⚠️ Knowledge base files not found, proceeding without clinical context");
+    }
 
     // --- READ REQUEST ---
     const body = await req.json();
-    const { images, image } = body; // Support both 'images' (array) and 'image' (single) for backward compatibility
+    const { images, image, image_url } = body; // Support multiple input formats
 
-    // Normalize to array: if 'images' is provided, use it; otherwise use 'image' as single-item array
-    const imageArray = images || (image ? [image] : []);
+    // Determine primary image source
+    let primaryImageInput: string | null = null;
     
-    if (!imageArray || imageArray.length === 0) {
+    if (image_url) {
+      // New format: image_url (Supabase Storage URL)
+      primaryImageInput = image_url;
+    } else if (images && images.length > 0) {
+      // Array format
+      primaryImageInput = images[0];
+    } else if (image) {
+      // Single image format
+      primaryImageInput = image;
+    }
+    
+    if (!primaryImageInput) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    // Use the first image for analysis (typically the center/primary view)
-    const primaryImageRaw = imageArray[0];
-    
-    // Validate image format
-    const primaryImage = validateImageData(primaryImageRaw);
-    if (!primaryImage) {
-      console.error("❌ Invalid image format provided");
-      return NextResponse.json({ 
-        ...getSafeFallbackResponse(),
-        error: "Invalid image format"
-      }, { status: 400 });
-    }
+    console.log("📸 Image input received, type:", primaryImageInput.startsWith('data:') ? 'base64' : 'url');
 
-    console.log("📸 Image validated, size:", primaryImage.length, "chars");
-
-    // --- A. UPLOAD ALL IMAGES TO STORAGE (non-blocking) ---
+    // --- A. UPLOAD IMAGE TO STORAGE AND PREPARE FOR GEMINI ---
     const timestamp = Date.now();
-    const uploadedImageUrls: string[] = [];
+    let primaryImageUrl: string = primaryImageInput;
+    let uploadedImageUrls: string[] = [];
+    let imageBase64: string | null = null;
+    let mimeType: string = 'image/jpeg';
+    let base64Data: string = '';
 
-    for (let i = 0; i < imageArray.length; i++) {
-      const img = imageArray[i];
-      const validatedImg = validateImageData(img);
-      if (!validatedImg) continue;
+    // If image is base64, validate and prepare for both storage and Gemini
+    if (primaryImageInput.startsWith('data:image/')) {
+      const validatedImg = validateImageData(primaryImageInput);
+      if (!validatedImg) {
+        return NextResponse.json({ 
+          ...getSafeFallbackResponse(),
+          error: "Invalid image format"
+        }, { status: 400 });
+      }
       
-      const base64Data = validatedImg.replace(/^data:image\/\w+;base64,/, "");
+      // Use base64 directly for Gemini (no need to fetch)
+      imageBase64 = validatedImg;
+      const base64Match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (!base64Match) {
+        return NextResponse.json({ 
+          ...getSafeFallbackResponse(),
+          error: "Invalid base64 format"
+        }, { status: 400 });
+      }
+      
+      mimeType = base64Match[1];
+      base64Data = base64Match[2];
+      
+      // Upload to Supabase Storage for persistence
       const buffer = Buffer.from(base64Data, 'base64');
-      const fileName = `scan_${timestamp}_${i + 1}.jpg`;
+      const fileName = `scan_${timestamp}.jpg`;
 
       try {
-        // Upload to Supabase Storage bucket 'scan-images'
         const { data: uploadData, error: uploadError } = await supabase
           .storage
           .from('scan-images')
           .upload(fileName, buffer, { 
-            contentType: 'image/jpeg',
-            upsert: false // Don't overwrite existing files
+            contentType: mimeType,
+            upsert: false
           });
 
         if (uploadError) {
-          console.error(`❌ Supabase Storage Upload Failed for image ${i + 1}:`, uploadError.message);
-          // Continue with other images - storage failure shouldn't block analysis
+          console.error("❌ Supabase Storage Upload Failed:", uploadError.message);
+          // Continue with analysis using base64
         } else {
-          // Successfully uploaded, get public URL
           const { data: publicUrlData } = supabase.storage.from('scan-images').getPublicUrl(fileName);
-          uploadedImageUrls.push(publicUrlData.publicUrl);
-          console.log(`✅ Image ${i + 1} uploaded successfully`);
+          primaryImageUrl = publicUrlData.publicUrl;
+          uploadedImageUrls.push(primaryImageUrl);
+          console.log("✅ Image uploaded successfully to Supabase Storage");
         }
       } catch (uploadErr) {
-        console.error(`❌ Error uploading image ${i + 1}:`, uploadErr);
+        console.error("❌ Error uploading image:", uploadErr);
         // Continue - storage is optional
       }
+    } else {
+      // Already a URL, fetch and convert to base64 for Gemini
+      primaryImageUrl = primaryImageInput;
+      uploadedImageUrls.push(primaryImageUrl);
+      
+      console.log("📥 Fetching image from URL for Gemini analysis...");
+      imageBase64 = await fetchImageAsBase64(primaryImageUrl);
+      
+      if (!imageBase64) {
+        return NextResponse.json({ 
+          ...getSafeFallbackResponse(),
+          error: "Failed to fetch image from URL"
+        }, { status: 400 });
+      }
+
+      // Extract base64 data and MIME type for Gemini
+      const base64Match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (!base64Match) {
+        return NextResponse.json({ 
+          ...getSafeFallbackResponse(),
+          error: "Invalid image format"
+        }, { status: 400 });
+      }
+
+      mimeType = base64Match[1];
+      base64Data = base64Match[2];
     }
 
-    // Use the first uploaded URL for database storage, or primary image if upload failed
-    const primaryImageUrl = uploadedImageUrls[0] || primaryImage;
+    // --- C. BUILD SYSTEM INSTRUCTIONS WITH KNOWLEDGE BASE ---
+    let systemInstructions = `You are a clinical dermatology AI assistant analyzing 15x macro skin images for acne assessment.
 
-    // --- B. ANALYZE WITH GPT-4o (using primary image) ---
-    console.log("🤖 Calling GPT-4o Vision API...");
+TASK: Using the provided GAGS (Global Acne Grading System) and extraction safety protocols, analyze this 15x macro skin image. Differentiate between pustules, nodules, and cystic acne.
+
+CRITICAL: You must return ONLY a valid JSON object with these exact keys:
+{
+  "gags_score": <number 0-44>,
+  "triage_level": <"Routine" | "Monitor" | "Referral">,
+  "extraction_eligible": <boolean>,
+  "analysis_summary": <string>,
+  "ai_confidence": <float 0.0-1.0>
+}
+
+GAGS SCORING:
+- Score range: 0-44 points
+- Assess 6 face regions: forehead, right cheek, left cheek, nose, chin, chest/back
+- Lesion types: Comedones (0-2), Papules (0-3), Pustules (0-3), Nodules (0-4) per region
+- Severity: 0-18 (Mild), 19-30 (Moderate), 31-38 (Severe), 39-44 (Very Severe)
+
+LESION DIFFERENTIATION:
+- Pustules: Superficial, pus-filled, white/yellow center, red base, 2-5mm, surface-level
+- Nodules: Deep, solid, painful, no visible pus, extends into dermis, 5-10mm+, hard to touch
+- Cystic Acne: Deepest form, large, painful, pus-filled, 10mm+, may cause scarring
+
+TRIAGE LEVELS:
+- Routine: Mild acne (GAGS 0-18), surface-level, non-inflamed, clear extraction eligibility
+- Monitor: Moderate acne (GAGS 19-30), some inflammation, mixed lesion types, requires assessment
+- Referral: Severe/Very Severe (GAGS 31-44), deep nodules/cysts, significant inflammation, infection signs
+
+EXTRACTION ELIGIBILITY:
+- Eligible: Whiteheads, blackheads, superficial pustules, milia (surface level only)
+- NOT Eligible: Deep nodules, cystic acne, inflamed lesions, active infection, unclear lesions
+
+Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
+
+    // Inject knowledge base content if available
+    if (knowledgeBase) {
+      systemInstructions += `\n\nCLINICAL KNOWLEDGE BASE:\n\n=== ACNE DIAGNOSTICS ===\n${knowledgeBase.acneDiagnostics}\n\n=== EXTRACTION SAFETY PROTOCOL ===\n${knowledgeBase.extractionSafety}\n\n=== ACTIVE INGREDIENTS ===\n${knowledgeBase.activeIngredients}`;
+    }
+
+    // --- D. ANALYZE WITH GEMINI 1.5 FLASH ---
+    console.log("🤖 Calling Google Gemini 1.5 Flash API...");
     
-    let response;
     let aiResult;
     
     try {
-      response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a cosmetic dermatologist providing visual skin assessment. This is cosmetic analysis only, not medical diagnosis.
-
-Analyze the skin image and provide a JSON response with this structure:
-{
-  "verdict": "CLEAR" | "POP" | "STOP" | "DOCTOR",
-  "skin_summary": "2-3 sentence professional assessment",
-  "key_observations": ["observation 1", "observation 2", "observation 3"],
-  "likely_skin_type": "Oily | Dry | Combination | Normal | Dehydrated | Sensitive",
-  "routine_insights": ["insight 1", "insight 2"],
-  "recommended_focus": ["immediate focus", "short-term focus"],
-  "confidence": 0.0-1.0
-}
-
-Verdict rules:
-- CLEAR: No distinct blemish or concern
-- POP: Surface-level whitehead/pustule, minimal inflammation
-- STOP: Red, inflamed, deep, or irritated blemish
-- DOCTOR: Unclear, unusual, or concerning appearance
-
-Return ONLY valid JSON. No markdown, no explanations.`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Analyze this skin image and provide a cosmetic assessment in the specified JSON format."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: primaryImage
-                }
-              }
-            ]
-          }
-        ],
-        response_format: { type: "json_object" }, // Force JSON output
-        max_tokens: 1500, // Increased for comprehensive responses
-        temperature: 0.3 // Lower temperature for more consistent JSON
-      });
-
-      console.log("✅ OpenAI API call successful");
-      console.log("📊 Response structure:", {
-        hasChoices: !!response.choices,
-        choicesLength: response.choices?.length || 0,
-        hasContent: !!response.choices?.[0]?.message?.content,
-        contentLength: response.choices?.[0]?.message?.content?.length || 0,
-        finishReason: response.choices?.[0]?.finish_reason
-      });
-
-      // --- C. SAFE JSON PARSING with repair logic ---
-      let rawContent = response.choices[0]?.message?.content || "";
+      const prompt = systemInstructions;
       
-      // Log the raw response for debugging
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: mimeType
+          }
+        }
+      ]);
+
+      const response = await result.response;
+      const rawContent = response.text();
+
+      console.log("✅ Gemini API call successful");
+      console.log("📝 Raw content length:", rawContent.length, "chars");
+
+      // --- E. SAFE JSON PARSING with repair logic ---
       if (!rawContent || rawContent.trim() === "") {
-        console.error("❌ OpenAI returned empty content");
-        console.error("   Finish reason:", response.choices[0]?.finish_reason);
-        console.error("   Full response:", JSON.stringify(response, null, 2));
+        console.error("❌ Gemini returned empty content");
         aiResult = getSafeFallbackResponse();
       } else {
-        console.log("📝 Raw content length:", rawContent.length, "chars");
-        
-        // Repair and parse JSON
         const repairedJSON = repairJSON(rawContent);
         
         try {
           aiResult = JSON.parse(repairedJSON);
           
           // Validate required fields exist
-          if (!aiResult.verdict || !aiResult.skin_summary) {
+          if (
+            typeof aiResult.gags_score !== 'number' ||
+            !aiResult.triage_level ||
+            typeof aiResult.extraction_eligible !== 'boolean' ||
+            !aiResult.analysis_summary ||
+            typeof aiResult.ai_confidence !== 'number'
+          ) {
             console.warn("⚠️ Response missing required fields, using fallback");
             aiResult = getSafeFallbackResponse();
           } else {
-            // Map new response format to legacy format for backward compatibility
-            if (!aiResult.diagnosis && aiResult.skin_summary) {
-              aiResult.diagnosis = aiResult.skin_summary;
-            }
-            
-            // Ensure all required fields exist with defaults
+            // Ensure values are within valid ranges
             aiResult = {
-              verdict: aiResult.verdict || "DOCTOR",
-              skin_summary: aiResult.skin_summary || "Analysis completed",
-              diagnosis: aiResult.diagnosis || aiResult.skin_summary || "Analysis completed",
-              key_observations: aiResult.key_observations || [],
-              likely_skin_type: aiResult.likely_skin_type || "Unknown",
-              routine_insights: aiResult.routine_insights || [],
-              recommended_focus: aiResult.recommended_focus || [],
-              confidence: typeof aiResult.confidence === 'number' ? aiResult.confidence : 0.7
+              gags_score: Math.max(0, Math.min(44, Math.round(aiResult.gags_score))),
+              triage_level: ['Routine', 'Monitor', 'Referral'].includes(aiResult.triage_level) 
+                ? aiResult.triage_level 
+                : 'Referral',
+              extraction_eligible: Boolean(aiResult.extraction_eligible),
+              analysis_summary: String(aiResult.analysis_summary),
+              ai_confidence: Math.max(0, Math.min(1, parseFloat(aiResult.ai_confidence.toFixed(2))))
             };
             
             console.log("✅ Successfully parsed and validated AI response");
@@ -284,28 +356,26 @@ Return ONLY valid JSON. No markdown, no explanations.`
           aiResult = getSafeFallbackResponse();
         }
       }
-    } catch (openaiError: any) {
-      console.error("🔥 OpenAI API Error:", {
-        message: openaiError.message,
-        status: openaiError.status,
-        code: openaiError.code,
-        type: openaiError.type
+    } catch (geminiError: any) {
+      console.error("🔥 Gemini API Error:", {
+        message: geminiError.message,
+        status: geminiError.status,
+        code: geminiError.code
       });
       
       // Use fallback response
       aiResult = getSafeFallbackResponse();
     }
 
-    // --- D. SAVE TO DB (non-blocking) ---
-    // Only save if we have at least one uploaded image URL
+    // --- F. SAVE TO DB USING SERVICE ROLE KEY ---
     if (uploadedImageUrls.length > 0) {
       try {
         const { error: dbError } = await supabase.from('scans').insert({
           image_url: primaryImageUrl,
           image_urls: uploadedImageUrls.length > 1 ? uploadedImageUrls : null,
-          ai_diagnosis: aiResult.diagnosis || aiResult.skin_summary,
-          ai_verdict: aiResult.verdict,
-          ai_confidence: aiResult.confidence || 0
+          ai_diagnosis: aiResult.analysis_summary,
+          ai_verdict: aiResult.triage_level,
+          ai_confidence: aiResult.ai_confidence
         });
 
         if (dbError) {
@@ -320,8 +390,7 @@ Return ONLY valid JSON. No markdown, no explanations.`
       }
     }
 
-    // Return analysis result with image URLs
-    // ALWAYS return a valid response, even if analysis failed
+    // Return analysis result
     return NextResponse.json({
       ...aiResult,
       imageUrls: uploadedImageUrls,

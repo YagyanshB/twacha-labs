@@ -38,16 +38,14 @@ export default function AnalysisPage() {
     }
   }, []);
 
-  const getRecommendationFromVerdict = (verdict: string): string => {
-    switch (verdict) {
-      case 'CLEAR':
-        return 'Maintenance Routine';
-      case 'POP':
-        return 'Extraction Protocol';
-      case 'STOP':
-        return 'Professional Consultation Recommended';
-      case 'DOCTOR':
-        return 'Professional Evaluation Recommended';
+  const getRecommendationFromTriage = (triageLevel: string, extractionEligible: boolean): string => {
+    switch (triageLevel) {
+      case 'Routine':
+        return extractionEligible ? 'Extraction Protocol' : 'Maintenance Routine';
+      case 'Monitor':
+        return 'Professional Assessment Recommended';
+      case 'Referral':
+        return 'Professional Consultation Required';
       default:
         return 'The Founder\'s Kit';
     }
@@ -93,12 +91,20 @@ export default function AnalysisPage() {
       const updatedUsage = getUserUsage(userId);
       setAnalysisCount(updatedUsage.analysisCount);
       
-      // Map API response to component-expected format
+      // Map new Gemini API response format to component-expected format
+      // New format: gags_score, triage_level, extraction_eligible, analysis_summary, ai_confidence
+      // Old format: score, verdict, analysis, recommendation
       const mappedResult: AnalysisResult = {
-        score: Math.round((result.confidence || 0.7) * 100),
-        verdict: result.verdict || 'UNKNOWN',
-        analysis: result.diagnosis || result.skin_summary || 'Analysis completed',
-        recommendation: getRecommendationFromVerdict(result.verdict),
+        // Convert GAGS score (0-44) to a 0-100 scale, or use confidence
+        score: result.gags_score !== undefined 
+          ? Math.round((1 - result.gags_score / 44) * 100) // Invert: lower GAGS = higher score
+          : Math.round((result.ai_confidence || 0.7) * 100),
+        verdict: result.triage_level || result.verdict || 'UNKNOWN',
+        analysis: result.analysis_summary || result.diagnosis || result.skin_summary || 'Analysis completed',
+        recommendation: getRecommendationFromTriage(
+          result.triage_level || result.verdict || 'UNKNOWN',
+          result.extraction_eligible || false
+        ),
         imagePath: result.imagePath || result.imageUrls?.[0] || null,
       };
       

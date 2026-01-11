@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:api": "node test-api.js"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@mediapipe/face_detection": "^0.4.1646425229",
     "@supabase/supabase-js": "^2.89.0",
     "@tensorflow-models/face-detection": "^1.0.3",

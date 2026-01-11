@@ -966,9 +966,159 @@ footer {
 
 .helper-text {
   font-size: 0.875rem;
-  color: var(--gray);
+  color: rgba(255, 255, 255, 0.6);
   text-align: center;
   margin-top: 1rem;
+}
+
+/* Mode Tabs */
+.mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem;
+  border-radius: 50px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mode-tab.active {
+  background: var(--white);
+  color: var(--black);
+}
+
+.mode-tab-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Upload Zone */
+.upload-zone {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.upload-zone:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.upload-zone.dragging {
+  border-color: var(--white);
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.02);
+}
+
+.upload-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.upload-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover .upload-icon-wrapper {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+}
+
+.upload-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.upload-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--white);
+  margin: 0;
+}
+
+.upload-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.upload-hint {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  margin-top: 0.5rem;
+}
+
+/* Upload Preview */
+.upload-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.upload-retake-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.upload-retake-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: var(--white);
+  transform: scale(1.1);
 }
 
 /* Funnel Step (Age & Skin Type) */

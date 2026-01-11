@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Test - Twacha Labs</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      color: #fff;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      font-weight: 600;
+    }
+    
+    .test-section {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .test-section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .file-label {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 1rem;
+    }
+    
+    .file-label:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    button {
+      padding: 1rem 2rem;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s;
+      margin-right: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .preview {
+      margin-top: 1rem;
+      max-width: 100%;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .preview.show {
+      display: block;
+    }
+    
+    .result {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .result.show {
+      display: block;
+    }
+    
+    .result.success {
+      border-left: 4px solid #10b981;
+    }
+    
+    .result.error {
+      border-left: 4px solid #ef4444;
+    }
+    
+    .result pre {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+    
+    .loading {
+      display: none;
+      margin-top: 1rem;
+    }
+    
+    .loading.show {
+      display: block;
+    }
+    
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .field-group {
+      margin-bottom: 1rem;
+    }
+    
+    .field-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .field-group select,
+    .field-group input {
+      width: 100%;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 1rem;
+    }
+    
+    .field-group select option {
+      background: #000;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 API Test Tool</h1>
+    
+    <div class="test-section">
+      <h2>Test Image Upload</h2>
+      
+      <label for="imageInput" class="file-label">
+        📸 Choose an image file
+      </label>
+      <input type="file" id="imageInput" accept="image/*">
+      
+      <div class="field-group">
+        <label for="ageSelect">Age Range</label>
+        <select id="ageSelect">
+          <option value="18-24">18-24</option>
+          <option value="25-29" selected>25-29</option>
+          <option value="30-35">30-35</option>
+          <option value="36-40">36-40</option>
+          <option value="40+">40+</option>
+        </select>
+      </div>
+      
+      <div class="field-group">
+        <label for="skinTypeSelect">Skin Type</label>
+        <select id="skinTypeSelect">
+          <option value="dry">Dry</option>
+          <option value="oily">Oily</option>
+          <option value="normal">Normal</option>
+          <option value="combination" selected>Combination</option>
+          <option value="sensitive">Sensitive</option>
+        </select>
+      </div>
+      
+      <img id="preview" class="preview" alt="Preview">
+      
+      <div>
+        <button id="testButton" disabled>Test API</button>
+        <button id="clearButton">Clear</button>
+      </div>
+      
+      <div class="loading" id="loading">
+        <span class="spinner"></span>
+        Testing API...
+      </div>
+      
+      <div class="result" id="result">
+        <h3 id="resultTitle"></h3>
+        <pre id="resultContent"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const preview = document.getElementById('preview');
+    const testButton = document.getElementById('testButton');
+    const clearButton = document.getElementById('clearButton');
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultContent = document.getElementById('resultContent');
+    const ageSelect = document.getElementById('ageSelect');
+    const skinTypeSelect = document.getElementById('skinTypeSelect');
+    
+    let imageData = null;
+    
+    imageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          imageData = reader.result;
+          preview.src = imageData;
+          preview.classList.add('show');
+          testButton.disabled = false;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    
+    testButton.addEventListener('click', async () => {
+      if (!imageData) return;
+      
+      testButton.disabled = true;
+      loading.classList.add('show');
+      result.classList.remove('show');
+      
+      try {
+        const response = await fetch('http://localhost:3000/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            images: [imageData],
+            age: ageSelect.value,
+            skinType: skinTypeSelect.value,
+          }),
+        });
+        
+        const data = await response.json();
+        
+        loading.classList.remove('show');
+        result.classList.add('show');
+        result.classList.remove('error', 'success');
+        
+        if (response.ok) {
+          result.classList.add('success');
+          resultTitle.textContent = '✅ Success!';
+          resultContent.textContent = JSON.stringify(data, null, 2);
+        } else {
+          result.classList.add('error');
+          resultTitle.textContent = '❌ Error';
+          resultContent.textContent = JSON.stringify(data, null, 2);
+        }
+      } catch (error) {
+        loading.classList.remove('show');
+        result.classList.add('show', 'error');
+        resultTitle.textContent = '❌ Connection Error';
+        resultContent.textContent = error.message + '\n\nMake sure the dev server is running: npm run dev';
+      } finally {
+        testButton.disabled = false;
+      }
+    });
+    
+    clearButton.addEventListener('click', () => {
+      imageInput.value = '';
+      imageData = null;
+      preview.classList.remove('show');
+      result.classList.remove('show');
+      testButton.disabled = true;
+    });
+  </script>
+</body>
+</html>
