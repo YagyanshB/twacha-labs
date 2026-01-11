@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -86,30 +86,53 @@ const validateImageData = (imageData: string): string | null => {
   return null;
 };
 
-// Repair malformed JSON responses
+// Repair malformed JSON responses with comprehensive cleaning
 const repairJSON = (rawContent: string): string => {
+  console.log("🔧 Starting JSON repair...");
+  console.log("📝 Raw content (first 200 chars):", rawContent.substring(0, 200));
+  
   if (!rawContent || rawContent.trim() === '') {
+    console.log("⚠️ Empty content, returning fallback");
     return JSON.stringify(getSafeFallbackResponse());
   }
   
-  // Remove markdown code blocks
+  // Step 1: Remove markdown code blocks (various formats)
   let cleaned = rawContent
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/i, '')
+    .replace(/^```json\s*/gi, '')  // ```json at start
+    .replace(/^```\s*/g, '')        // ``` at start
+    .replace(/\s*```$/g, '')       // ``` at end
+    .replace(/^`/g, '')             // Single backtick at start
+    .replace(/`$/g, '')             // Single backtick at end
     .trim();
   
-  // Try to extract JSON if wrapped in text
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    cleaned = jsonMatch[0];
+  console.log("📝 After markdown removal (first 200 chars):", cleaned.substring(0, 200));
+  
+  // Step 2: Try to extract JSON object if wrapped in text
+  // Look for the first { and last } to extract the JSON object
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    console.log("📝 Extracted JSON object (first 200 chars):", cleaned.substring(0, 200));
+  } else {
+    // Try regex as fallback
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleaned = jsonMatch[0];
+      console.log("📝 Regex extracted JSON (first 200 chars):", cleaned.substring(0, 200));
+    }
   }
   
-  // Try to fix common JSON issues
+  // Step 3: Fix common JSON issues
   cleaned = cleaned
-    .replace(/,\s*}/g, '}') // Remove trailing commas
-    .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
-    .replace(/'/g, '"'); // Replace single quotes with double quotes (basic fix)
+    .replace(/,\s*}/g, '}')           // Remove trailing commas before }
+    .replace(/,\s*]/g, ']')           // Remove trailing commas before ]
+    .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3')  // Replace single quotes in keys
+    .replace(/:\s*'([^']+)'(\s*[,}])/g, ': "$1"$2')   // Replace single quotes in string values
+    .replace(/'/g, '"');               // Replace any remaining single quotes (basic fix)
+  
+  console.log("📝 After JSON fixes (first 200 chars):", cleaned.substring(0, 200));
   
   return cleaned;
 };
@@ -132,9 +155,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Server Config Error: Missing Google Gemini API key" }, { status: 500 });
     }
 
+    console.log("🔑 Initializing Supabase and Gemini clients...");
     const supabase = createClient(supabaseUrl, supabaseKey);
     const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    // Configure safety settings for clinical dermatology analysis
+    // BLOCK_NONE allows all content - necessary for analyzing skin conditions
+    const safetySettings = [
+      {
+        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+        threshold: HarmBlockThreshold.BLOCK_NONE
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+        threshold: HarmBlockThreshold.BLOCK_NONE
+      },
+      {
+        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+        threshold: HarmBlockThreshold.BLOCK_NONE
+      }
+    ];
+    
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-1.5-flash',
+      safetySettings: safetySettings
+    });
+    
+    console.log("✅ Gemini model initialized with safety settings:", safetySettings);
 
     // Load knowledge base
     const knowledgeBase = loadKnowledgeBase();
@@ -143,8 +194,17 @@ export async function POST(req: Request) {
     }
 
     // --- READ REQUEST ---
+    console.log("📥 Reading request body...");
     const body = await req.json();
     const { images, image, image_url } = body; // Support multiple input formats
+
+    console.log("📊 Request body keys:", Object.keys(body));
+    console.log("📊 Image sources found:", {
+      hasImageUrl: !!image_url,
+      hasImages: !!images,
+      hasImage: !!image,
+      imagesLength: images?.length || 0
+    });
 
     // Determine primary image source
     let primaryImageInput: string | null = null;
@@ -152,19 +212,31 @@ export async function POST(req: Request) {
     if (image_url) {
       // New format: image_url (Supabase Storage URL)
       primaryImageInput = image_url;
+      console.log("📸 Using image_url from request");
     } else if (images && images.length > 0) {
       // Array format
       primaryImageInput = images[0];
+      console.log("📸 Using images array, first image");
     } else if (image) {
       // Single image format
       primaryImageInput = image;
+      console.log("📸 Using single image from request");
     }
     
     if (!primaryImageInput) {
+      console.error("❌ No image provided in request");
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    console.log("📸 Image input received, type:", primaryImageInput.startsWith('data:') ? 'base64' : 'url');
+    const imageType = primaryImageInput.startsWith('data:') ? 'base64' : 'url';
+    console.log("📸 Image input received");
+    console.log("   Type:", imageType);
+    console.log("   Length:", primaryImageInput.length, "chars");
+    if (imageType === 'url') {
+      console.log("   URL:", primaryImageInput.substring(0, 100) + "...");
+    } else {
+      console.log("   Base64 preview:", primaryImageInput.substring(0, 50) + "...");
+    }
 
     // --- A. UPLOAD IMAGE TO STORAGE AND PREPARE FOR GEMINI ---
     const timestamp = Date.now();
@@ -198,19 +270,19 @@ export async function POST(req: Request) {
       base64Data = base64Match[2];
       
       // Upload to Supabase Storage for persistence
-      const buffer = Buffer.from(base64Data, 'base64');
+    const buffer = Buffer.from(base64Data, 'base64');
       const fileName = `scan_${timestamp}.jpg`;
 
       try {
-        const { data: uploadData, error: uploadError } = await supabase
-          .storage
-          .from('scan-images')
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('scan-images')
           .upload(fileName, buffer, { 
             contentType: mimeType,
             upsert: false
           });
 
-        if (uploadError) {
+    if (uploadError) {
           console.error("❌ Supabase Storage Upload Failed:", uploadError.message);
           // Continue with analysis using base64
         } else {
@@ -229,18 +301,32 @@ export async function POST(req: Request) {
       uploadedImageUrls.push(primaryImageUrl);
       
       console.log("📥 Fetching image from URL for Gemini analysis...");
+      console.log("   Image URL:", primaryImageUrl);
+      
+      const fetchStartTime = Date.now();
       imageBase64 = await fetchImageAsBase64(primaryImageUrl);
+      const fetchDuration = Date.now() - fetchStartTime;
+      
+      console.log("📥 Image fetch completed");
+      console.log("   Duration:", fetchDuration, "ms");
+      console.log("   Status:", imageBase64 ? "✅ Success" : "❌ Failed");
       
       if (!imageBase64) {
+        console.error("❌ Failed to fetch image from URL:", primaryImageUrl);
         return NextResponse.json({ 
           ...getSafeFallbackResponse(),
           error: "Failed to fetch image from URL"
         }, { status: 400 });
       }
 
+      console.log("📥 Image fetched successfully");
+      console.log("   Base64 length:", imageBase64.length, "chars");
+      console.log("   Preview:", imageBase64.substring(0, 50) + "...");
+
       // Extract base64 data and MIME type for Gemini
       const base64Match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
       if (!base64Match) {
+        console.error("❌ Invalid image format after fetch");
         return NextResponse.json({ 
           ...getSafeFallbackResponse(),
           error: "Invalid image format"
@@ -249,6 +335,8 @@ export async function POST(req: Request) {
 
       mimeType = base64Match[1];
       base64Data = base64Match[2];
+      console.log("   MIME type:", mimeType);
+      console.log("   Base64 data length:", base64Data.length, "chars");
     }
 
     // --- C. BUILD SYSTEM INSTRUCTIONS WITH KNOWLEDGE BASE ---
@@ -294,12 +382,18 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
 
     // --- D. ANALYZE WITH GEMINI 1.5 FLASH ---
     console.log("🤖 Calling Google Gemini 1.5 Flash API...");
+    console.log("   Model: gemini-1.5-flash");
+    console.log("   MIME type:", mimeType);
+    console.log("   Base64 data length:", base64Data.length, "chars");
+    console.log("   Prompt length:", systemInstructions.length, "chars");
     
     let aiResult;
     
     try {
       const prompt = systemInstructions;
+      const apiStartTime = Date.now();
       
+      console.log("📤 Sending request to Gemini...");
       const result = await model.generateContent([
         prompt,
         {
@@ -310,31 +404,60 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
         }
       ]);
 
+      const apiDuration = Date.now() - apiStartTime;
+      console.log("✅ Gemini API call completed");
+      console.log("   Duration:", apiDuration, "ms");
+
       const response = await result.response;
       const rawContent = response.text();
 
-      console.log("✅ Gemini API call successful");
-      console.log("📝 Raw content length:", rawContent.length, "chars");
+      console.log("📥 Raw response received from Gemini");
+      console.log("   Content length:", rawContent.length, "chars");
+      console.log("   First 500 chars:", rawContent.substring(0, 500));
+      console.log("   Last 200 chars:", rawContent.substring(Math.max(0, rawContent.length - 200)));
 
       // --- E. SAFE JSON PARSING with repair logic ---
       if (!rawContent || rawContent.trim() === "") {
         console.error("❌ Gemini returned empty content");
+        console.error("   Response object:", JSON.stringify(response, null, 2));
         aiResult = getSafeFallbackResponse();
       } else {
+        console.log("🔧 Starting JSON parsing and repair...");
         const repairedJSON = repairJSON(rawContent);
         
+        console.log("📝 Repaired JSON (first 500 chars):", repairedJSON.substring(0, 500));
+        console.log("📝 Repaired JSON (last 200 chars):", repairedJSON.substring(Math.max(0, repairedJSON.length - 200)));
+        
         try {
+          console.log("🔍 Attempting JSON.parse...");
           aiResult = JSON.parse(repairedJSON);
+          console.log("✅ JSON.parse successful!");
+          console.log("📊 Parsed result:", JSON.stringify(aiResult, null, 2));
           
           // Validate required fields exist
-          if (
-            typeof aiResult.gags_score !== 'number' ||
-            !aiResult.triage_level ||
-            typeof aiResult.extraction_eligible !== 'boolean' ||
-            !aiResult.analysis_summary ||
-            typeof aiResult.ai_confidence !== 'number'
-          ) {
-            console.warn("⚠️ Response missing required fields, using fallback");
+          console.log("🔍 Validating required fields...");
+          const validationErrors: string[] = [];
+          
+          if (typeof aiResult.gags_score !== 'number') {
+            validationErrors.push(`gags_score is ${typeof aiResult.gags_score}, expected number`);
+          }
+          if (!aiResult.triage_level) {
+            validationErrors.push("triage_level is missing");
+          }
+          if (typeof aiResult.extraction_eligible !== 'boolean') {
+            validationErrors.push(`extraction_eligible is ${typeof aiResult.extraction_eligible}, expected boolean`);
+          }
+          if (!aiResult.analysis_summary) {
+            validationErrors.push("analysis_summary is missing");
+          }
+          if (typeof aiResult.ai_confidence !== 'number') {
+            validationErrors.push(`ai_confidence is ${typeof aiResult.ai_confidence}, expected number`);
+          }
+          
+          if (validationErrors.length > 0) {
+            console.warn("⚠️ Response missing required fields:");
+            validationErrors.forEach(err => console.warn("   -", err));
+            console.warn("   Using fallback response");
             aiResult = getSafeFallbackResponse();
           } else {
             // Ensure values are within valid ranges
@@ -349,19 +472,33 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
             };
             
             console.log("✅ Successfully parsed and validated AI response");
+            console.log("📊 Final result:", JSON.stringify(aiResult, null, 2));
           }
         } catch (parseError: any) {
-          console.error("❌ JSON Parse Error after repair:", parseError.message);
-          console.error("   Repaired JSON (first 500 chars):", repairedJSON.substring(0, 500));
+          console.error("❌ JSON Parse Error after repair");
+          console.error("   Error message:", parseError.message);
+          console.error("   Error stack:", parseError.stack);
+          console.error("   Raw content (full):", rawContent);
+          console.error("   Repaired JSON (full):", repairedJSON);
+          console.error("   Repaired JSON length:", repairedJSON.length, "chars");
+          console.error("   First 1000 chars of repaired JSON:", repairedJSON.substring(0, 1000));
+          console.error("   Last 500 chars of repaired JSON:", repairedJSON.substring(Math.max(0, repairedJSON.length - 500)));
           aiResult = getSafeFallbackResponse();
         }
       }
     } catch (geminiError: any) {
-      console.error("🔥 Gemini API Error:", {
-        message: geminiError.message,
-        status: geminiError.status,
-        code: geminiError.code
-      });
+      console.error("🔥 Gemini API Error:");
+      console.error("   Message:", geminiError.message);
+      console.error("   Status:", geminiError.status);
+      console.error("   Code:", geminiError.code);
+      console.error("   Name:", geminiError.name);
+      console.error("   Stack:", geminiError.stack);
+      console.error("   Full error object:", JSON.stringify(geminiError, Object.getOwnPropertyNames(geminiError), 2));
+      
+      // Check for safety-related blocks
+      if (geminiError.message?.includes('safety') || geminiError.message?.includes('blocked')) {
+        console.error("⚠️ This might be a safety filter issue. Check safety settings.");
+      }
       
       // Use fallback response
       aiResult = getSafeFallbackResponse();
@@ -398,11 +535,11 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
     });
 
   } catch (error: any) {
-    console.error("🔥 SERVER ERROR:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    console.error("🔥 SERVER ERROR (Top-level catch):");
+    console.error("   Message:", error.message);
+    console.error("   Name:", error.name);
+    console.error("   Stack:", error.stack);
+    console.error("   Full error object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     
     // Return safe fallback instead of error
     return NextResponse.json({
