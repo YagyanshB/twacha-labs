@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const body = await req.json();
-    const { email } = body;
+    const { email, consent_given } = body;
 
     if (!email) {
       return NextResponse.json({ error: "Email required" }, { status: 400 });
@@ -20,7 +20,11 @@ export async function POST(req: Request) {
 
     const { error } = await supabase
       .from('waitlist')
-      .insert({ email, created_at: new Date().toISOString() });
+      .insert({ 
+        email, 
+        consent_given: consent_given || false,
+        created_at: new Date().toISOString() 
+      });
 
     if (error) {
       console.error("Waitlist error:", error);

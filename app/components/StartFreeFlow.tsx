@@ -20,31 +20,27 @@ interface StartFreeFlowProps {
 }
 
 export default function StartFreeFlow({ onComplete, onBack }: StartFreeFlowProps) {
-  const [step, setStep] = useState(0); // Start with consent step (0)
+  const [step, setStep] = useState(0); // Start with camera step (consent removed)
   const [data, setData] = useState<StartFreeFlowData>({
     imageUrl: null,
     age: null,
     skinType: null,
   });
 
-  const handleConsent = () => {
-    setStep(1); // Move to camera step after consent
-  };
-
   const handleImageCapture = (imageUrl: string) => {
     setData({ ...data, imageUrl });
-    setStep(2);
+    setStep(1);
   };
 
   const handleAgeSelect = (age: string) => {
     setData({ ...data, age });
-    setStep(3);
+    setStep(2);
   };
 
   const handleSkinTypeSelect = (skinType: string) => {
     const updatedData = { ...data, skinType };
     setData(updatedData);
-    setStep(4);
+    setStep(3);
     // Auto-advance to loading after a brief delay
     setTimeout(() => {
       if (onComplete) {
@@ -91,7 +87,7 @@ export default function StartFreeFlow({ onComplete, onBack }: StartFreeFlowProps
           </button>
           <div className="nav-right">
             <span className="text-sm" style={{ color: isCameraStep ? 'rgba(255, 255, 255, 0.7)' : 'var(--gray)' }}>
-              {step === 0 ? 'Consent' : `Step ${step} of 3`}
+              Step {step + 1} of 3
             </span>
           </div>
         </div>
@@ -100,18 +96,15 @@ export default function StartFreeFlow({ onComplete, onBack }: StartFreeFlowProps
       {/* Step Content */}
       <div className={`funnel-content ${isCameraStep ? 'camera-funnel-content' : ''}`}>
         {step === 0 && (
-          <ConsentStep onConsent={handleConsent} onBack={handleBack} />
-        )}
-        {step === 1 && (
           <CameraStep onCapture={handleImageCapture} onBack={handleBack} />
         )}
-        {step === 2 && (
+        {step === 1 && (
           <AgeStep onSelect={handleAgeSelect} onBack={handleBack} />
         )}
-        {step === 3 && (
+        {step === 2 && (
           <SkinTypeStep onSelect={handleSkinTypeSelect} onBack={handleBack} />
         )}
-        {step === 4 && <LoadingStep />}
+        {step === 3 && <LoadingStep />}
       </div>
     </div>
   );
