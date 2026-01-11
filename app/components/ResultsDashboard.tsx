@@ -181,52 +181,51 @@ export default function ResultsDashboard({ analysisResult, email }: ResultsDashb
           </motion.div>
         </div>
 
-          {/* Clinical Report Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-3xl border border-stone-200 shadow-xl p-8"
-          >
-            <div className="mb-6">
-              <p className="text-sm font-medium text-[#52525B] mb-2">Triage Level</p>
-              <div className={`inline-block px-4 py-2 rounded-full ${getStatusColor()} mb-4`}>
-                <span className="font-semibold">{analysisResult.verdict}</span>
+        {/* Clinical Report Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-3xl border border-stone-200 shadow-xl p-8 mb-8"
+        >
+          <div className="mb-6">
+            <p className="text-sm font-medium text-[#52525B] mb-2">Triage Level</p>
+            <div className={`inline-block px-4 py-2 rounded-full ${getStatusColor()} mb-4`}>
+              <span className="font-semibold">{analysisResult.verdict}</span>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-sm font-medium text-[#52525B] mb-2">Clinical Report</p>
+            <p className="text-[#1E293B] leading-relaxed whitespace-pre-wrap">{analysisResult.analysis}</p>
+          </div>
+
+          {/* Active Ingredients */}
+          {analysisResult.activeIngredients && analysisResult.activeIngredients.length > 0 && (
+            <div className="mb-6 p-4 bg-[#3B82F6]/10 rounded-xl border border-[#3B82F6]/20">
+              <p className="text-sm font-medium text-[#3B82F6] mb-2">Recommended Active Ingredients</p>
+              <div className="flex flex-wrap gap-2">
+                {analysisResult.activeIngredients.map((ingredient, index) => (
+                  <span key={index} className="px-3 py-1 bg-white rounded-full text-sm font-semibold text-[#1E293B]">
+                  {ingredient}
+                  </span>
+                ))}
               </div>
             </div>
+          )}
 
-            <div className="mb-6">
-              <p className="text-sm font-medium text-[#52525B] mb-2">Clinical Report</p>
-              <p className="text-[#1E293B] leading-relaxed whitespace-pre-wrap">{analysisResult.analysis}</p>
+          <div className="p-4 bg-[#3B82F6]/10 rounded-xl border border-[#3B82F6]/20">
+            <p className="text-sm font-medium text-[#3B82F6] mb-2">Recommended Protocol</p>
+            <p className="text-lg font-semibold text-[#1E293B]">{analysisResult.recommendation}</p>
+          </div>
+
+          {/* AI Confidence */}
+          {analysisResult.aiConfidence !== undefined && (
+            <div className="mt-4 text-xs text-[#52525B] font-mono">
+              AI Confidence: {(analysisResult.aiConfidence * 100).toFixed(1)}%
             </div>
-
-            {/* Active Ingredients */}
-            {analysisResult.activeIngredients && analysisResult.activeIngredients.length > 0 && (
-              <div className="mb-6 p-4 bg-[#3B82F6]/10 rounded-xl border border-[#3B82F6]/20">
-                <p className="text-sm font-medium text-[#3B82F6] mb-2">Recommended Active Ingredients</p>
-                <div className="flex flex-wrap gap-2">
-                  {analysisResult.activeIngredients.map((ingredient, index) => (
-                    <span key={index} className="px-3 py-1 bg-white rounded-full text-sm font-semibold text-[#1E293B]">
-                      {ingredient}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="p-4 bg-[#3B82F6]/10 rounded-xl border border-[#3B82F6]/20">
-              <p className="text-sm font-medium text-[#3B82F6] mb-2">Recommended Protocol</p>
-              <p className="text-lg font-semibold text-[#1E293B]">{analysisResult.recommendation}</p>
-            </div>
-
-            {/* AI Confidence */}
-            {analysisResult.aiConfidence !== undefined && (
-              <div className="mt-4 text-xs text-[#52525B] font-mono">
-                AI Confidence: {(analysisResult.aiConfidence * 100).toFixed(1)}%
-              </div>
-            )}
-          </motion.div>
-        </div>
+          )}
+        </motion.div>
 
         {/* Hardware Showcase */}
         <motion.div
