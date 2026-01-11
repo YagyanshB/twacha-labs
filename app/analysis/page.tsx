@@ -19,6 +19,9 @@ interface AnalysisResult {
   activeIngredients?: string[];
   aiConfidence?: number;
   createdAt?: string;
+  summary?: string; // User-friendly one-sentence summary
+  actionStep?: string; // Clear actionable instruction
+  scientificNote?: string; // Technical details for footer
 }
 
 export default function AnalysisPage() {
@@ -103,7 +106,7 @@ export default function AnalysisPage() {
       setAnalysisCount(updatedUsage.analysisCount);
       
       // Map new OpenAI API response format to component-expected format
-      // New format: gags_score (1-4), lesion_type, extraction_eligible (YES/NO), triage_level, analysis_summary, active_ingredients, ai_confidence
+      // New format: gags_score, lesion_type, extraction_eligible, triage_level, summary, action_step, scientific_note, active_ingredients, ai_confidence
       // Old format: score, verdict, analysis, recommendation
       const mappedResult: AnalysisResult = {
         // Convert GAGS score (1-4) to a 0-100 scale for display
@@ -111,7 +114,8 @@ export default function AnalysisPage() {
           ? Math.round((1 - (result.gags_score - 1) / 3) * 100) // Convert 1-4 to 0-100 (inverted)
           : Math.round((result.ai_confidence || 0.7) * 100),
         verdict: result.triage_level || result.verdict || 'UNKNOWN',
-        analysis: result.analysis_summary || result.diagnosis || result.skin_summary || 'Analysis completed',
+        // Use new user-friendly fields: summary, action_step, scientific_note
+        analysis: result.summary || result.analysis_summary || result.diagnosis || 'Analysis completed',
         recommendation: getRecommendationFromTriage(
           result.triage_level || result.verdict || 'UNKNOWN',
           result.extraction_eligible === 'YES'
@@ -124,6 +128,10 @@ export default function AnalysisPage() {
         activeIngredients: result.active_ingredients || [],
         aiConfidence: result.ai_confidence,
         createdAt: new Date().toISOString(),
+        // New user-friendly fields
+        summary: result.summary,
+        actionStep: result.action_step,
+        scientificNote: result.scientific_note,
       };
       
       setAnalysisResult(mappedResult);

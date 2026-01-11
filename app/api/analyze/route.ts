@@ -11,9 +11,11 @@ export const maxDuration = 60;
 const getSafeFallbackResponse = () => ({
   gags_score: 4,
   lesion_type: "Unknown",
-  extraction_eligible: false,
+  extraction_eligible: "NO",
   triage_level: "Referral",
-  analysis_summary: "Unable to complete analysis at this time. Please try again or consult a dermatologist for professional evaluation.",
+  summary: "Unable to complete analysis at this time. Please try again.",
+  action_step: "Consult a dermatologist for professional evaluation.",
+  scientific_note: "Analysis incomplete. GAGS score unavailable.",
   active_ingredients: [],
   ai_confidence: 0.0
 });
@@ -354,7 +356,7 @@ export async function POST(req: Request) {
     console.log("   Base64 data length:", base64Data.length, "chars");
 
     // --- C. BUILD CLINICAL PROMPT WITH KNOWLEDGE BASE ---
-    let systemInstructions = `Act as a Senior Clinical Dermatologist. Analyze this 15x macro skin image.
+    let systemInstructions = `Act as a Senior Clinical Dermatologist with NHS experience. Analyze this 15x macro skin image.
 
 CRITICAL: You must return ONLY a valid JSON object with these exact keys:
 {
@@ -362,18 +364,40 @@ CRITICAL: You must return ONLY a valid JSON object with these exact keys:
   "lesion_type": <"Comedone" | "Pustule" | "Nodule" | "Cystic" | "Mixed" | "None">,
   "extraction_eligible": <"YES" | "NO">,
   "triage_level": <"Routine" | "Monitor" | "Referral">,
-  "analysis_summary": <string - full clinical report text>,
+  "summary": <string - ONE simple sentence explaining what you see, using plain language like "spots", "clogged pores", "breakouts" - NO medical jargon>,
+  "action_step": <string - ONE clear, actionable instruction like "Apply the patch and wait 6 hours" or "Use a warm compress for 10 minutes">,
+  "scientific_note": <string - Technical GAGS data and clinical details for the Technical Details section>,
   "active_ingredients": <array of 2 strings - recommended active ingredients>,
   "ai_confidence": <float 0.0-1.0>
 }
 
-GAGS SCORING (Simplified 1-4 Scale):
-- 1: Minimal/Mild - Few comedones, no inflammation
-- 2: Mild - Some comedones and papules, minimal inflammation
-- 3: Moderate - Multiple lesions, visible inflammation, some pustules
-- 4: Severe - Extensive lesions, significant inflammation, nodules/cysts present
+COMMUNICATION STYLE:
+- Tone: Empathic, professional, and direct. Like an NHS doctor speaking to a patient, not a textbook.
+- Language: Use everyday words. Say "spots" not "lesions", "clogged pores" not "comedones", "breakouts" not "pustules".
+- Be reassuring and practical. Focus on what the user can do, not medical terminology.
 
-LESION TYPES:
+SUMMARY FIELD:
+- ONE sentence only
+- Plain language explanation of what you see
+- Examples: "You have some surface-level spots and clogged pores in the T-zone." or "I can see a few breakouts that are ready for extraction."
+
+ACTION_STEP FIELD:
+- ONE clear, actionable instruction
+- Be specific: "Apply the patch and wait 6 hours" not "Use a patch"
+- Examples: "Apply a warm compress for 10 minutes, then gently cleanse." or "Use the sterile lancet on the whitehead, then cover with a patch."
+
+SCIENTIFIC_NOTE FIELD:
+- Technical GAGS scoring details
+- Clinical terminology is fine here (this goes in Technical Details)
+- Include: GAGS score rationale, lesion type classification, clinical observations
+
+GAGS SCORING (Simplified 1-4 Scale):
+- 1: Minimal/Mild - Few clogged pores, no inflammation
+- 2: Mild - Some clogged pores and small spots, minimal inflammation
+- 3: Moderate - Multiple spots, visible inflammation, some breakouts
+- 4: Severe - Extensive breakouts, significant inflammation, deep spots present
+
+LESION TYPES (for scientific_note only):
 - Comedone: Non-inflamed, open (blackhead) or closed (whitehead)
 - Pustule: Superficial, pus-filled, white/yellow center, red base, 2-5mm
 - Nodule: Deep, solid, painful, no visible pus, extends into dermis, 5-10mm+
@@ -382,16 +406,16 @@ LESION TYPES:
 - None: No visible lesions
 
 EXTRACTION ELIGIBILITY:
-- YES: Whiteheads, blackheads, superficial pustules, milia (surface level only)
-- NO: Deep nodules, cystic acne, inflamed lesions, active infection, unclear lesions
+- YES: Whiteheads, blackheads, superficial spots ready for extraction (surface level only)
+- NO: Deep spots, inflamed breakouts, active infection, unclear areas
 
 TRIAGE LEVELS:
 - Routine: GAGS 1-2, surface-level, non-inflamed, clear extraction eligibility
-- Monitor: GAGS 2-3, some inflammation, mixed lesion types, requires assessment
-- Referral: GAGS 3-4, deep nodules/cysts, significant inflammation, infection signs
+- Monitor: GAGS 2-3, some inflammation, mixed types, requires assessment
+- Referral: GAGS 3-4, deep spots, significant inflammation, infection signs
 
 ACTIVE INGREDIENTS:
-Provide 2 clinically appropriate active ingredients based on the lesion type and severity. Common options include: Salicylic Acid, Benzoyl Peroxide, Retinoids, Niacinamide, Azelaic Acid, etc.
+Provide 2 clinically appropriate active ingredients based on the condition. Common options include: Salicylic Acid, Benzoyl Peroxide, Retinoids, Niacinamide, Azelaic Acid, etc.
 
 Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
 
@@ -487,8 +511,14 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
           if (!aiResult.triage_level) {
             validationErrors.push("triage_level is missing");
           }
-          if (!aiResult.analysis_summary) {
-            validationErrors.push("analysis_summary is missing");
+          if (!aiResult.summary) {
+            validationErrors.push("summary is missing");
+          }
+          if (!aiResult.action_step) {
+            validationErrors.push("action_step is missing");
+          }
+          if (!aiResult.scientific_note) {
+            validationErrors.push("scientific_note is missing");
           }
           if (!Array.isArray(aiResult.active_ingredients) || aiResult.active_ingredients.length !== 2) {
             validationErrors.push(`active_ingredients is ${JSON.stringify(aiResult.active_ingredients)}, expected array of 2 strings`);
@@ -511,7 +541,9 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
               triage_level: ['Routine', 'Monitor', 'Referral'].includes(aiResult.triage_level) 
                 ? aiResult.triage_level 
                 : 'Referral',
-              analysis_summary: String(aiResult.analysis_summary),
+              summary: String(aiResult.summary || aiResult.analysis_summary || 'Analysis completed'),
+              action_step: String(aiResult.action_step || 'Follow recommended protocol'),
+              scientific_note: String(aiResult.scientific_note || aiResult.analysis_summary || 'Technical details unavailable'),
               active_ingredients: Array.isArray(aiResult.active_ingredients) 
                 ? aiResult.active_ingredients.map(String).slice(0, 2)
                 : [],

@@ -15,6 +15,9 @@ interface AnalysisResult {
   activeIngredients?: string[];
   aiConfidence?: number;
   createdAt?: string;
+  summary?: string; // User-friendly one-sentence summary
+  actionStep?: string; // Clear actionable instruction
+  scientificNote?: string; // Technical details for footer
 }
 
 interface ResultsDashboardProps {
@@ -39,57 +42,31 @@ export default function ResultsDashboard({ analysisResult, email }: ResultsDashb
 
   const dermalStatus = getDermalStatus();
 
-  // Parse analysis summary into three bullet points
-  const parseSummary = (summary: string) => {
-    // Try to extract structured information from the summary
-    const lines = summary.split(/[\.\n]/).filter(line => line.trim().length > 10);
-    
-    // Simple parsing: look for key phrases
-    let whatWeSee = '';
-    let whyItsHappening = '';
-    let immediateStep = '';
-
-    // Try to find "What we see" type information
-    const whatPatterns = [
-      /(?:see|detect|observe|identify|found|showing|present)[^\.]{10,60}/i,
-      /(?:lesion|acne|pustule|nodule|comedone|inflammation|congestion)[^\.]{10,60}/i,
-    ];
-    
-    const whyPatterns = [
-      /(?:cause|due to|because|result of|caused by|attributed to)[^\.]{10,60}/i,
-      /(?:blocked|clogged|inflammation|bacterial|excess)[^\.]{10,60}/i,
-    ];
-    
-    const stepPatterns = [
-      /(?:recommend|suggest|apply|use|try|consider|step|action)[^\.]{10,60}/i,
-      /(?:warm compress|cleanser|topical|extraction|consultation)[^\.]{10,60}/i,
-    ];
-
-    // Extract first matching sentence for each category
-    for (const line of lines) {
-      if (!whatWeSee && whatPatterns.some(p => p.test(line))) {
-        whatWeSee = line.trim().substring(0, 80);
-      }
-      if (!whyItsHappening && whyPatterns.some(p => p.test(line))) {
-        whyItsHappening = line.trim().substring(0, 80);
-      }
-      if (!immediateStep && stepPatterns.some(p => p.test(line))) {
-        immediateStep = line.trim().substring(0, 80);
-      }
+  // Use structured fields from API, with fallback parsing if needed
+  const getSummaryPoints = () => {
+    // If we have the new structured fields, use them directly
+    if (analysisResult.summary && analysisResult.actionStep) {
+      return {
+        whatWeSee: analysisResult.summary,
+        whyItsHappening: analysisResult.scientificNote 
+          ? analysisResult.scientificNote.split('.')[0] + '.' 
+          : 'Blocked pores and excess sebum production',
+        immediateStep: analysisResult.actionStep
+      };
     }
-
-    // Fallback: use first three sentences if parsing fails
-    if (!whatWeSee || !whyItsHappening || !immediateStep) {
-      const sentences = lines.slice(0, 3);
-      whatWeSee = sentences[0]?.trim().substring(0, 80) || 'Surface-level skin condition detected';
-      whyItsHappening = sentences[1]?.trim().substring(0, 80) || 'Blocked pores and excess sebum production';
-      immediateStep = sentences[2]?.trim().substring(0, 80) || 'Apply a warm compress to the affected area';
-    }
-
-    return { whatWeSee, whyItsHappening, immediateStep };
+    
+    // Fallback: parse from analysis field if new fields not available
+    const lines = analysisResult.analysis.split(/[\.\n]/).filter(line => line.trim().length > 10);
+    const sentences = lines.slice(0, 3);
+    
+    return {
+      whatWeSee: sentences[0]?.trim().substring(0, 80) || 'Surface-level skin condition detected',
+      whyItsHappening: sentences[1]?.trim().substring(0, 80) || 'Blocked pores and excess sebum production',
+      immediateStep: sentences[2]?.trim().substring(0, 80) || 'Apply a warm compress to the affected area'
+    };
   };
 
-  const summary = parseSummary(analysisResult.analysis);
+  const summary = getSummaryPoints();
 
   // Generate Scan ID from timestamp
   const scanId = analysisResult.createdAt 
@@ -194,6 +171,11 @@ export default function ResultsDashboard({ analysisResult, email }: ResultsDashb
                 <span>Type: {analysisResult.lesionType}</span>
               )}
             </div>
+            {analysisResult.scientificNote && (
+              <p className="mt-3 text-xs text-slate-500 font-mono leading-relaxed">
+                {analysisResult.scientificNote}
+              </p>
+            )}
           </div>
         </motion.div>
 
