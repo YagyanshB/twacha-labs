@@ -165,16 +165,25 @@ const repairJSON = (rawContent: string): string => {
 
 export async function POST(req: Request) {
   try {
-    // Initialize Supabase and OpenAI
+    // EXplicitly check environment variables BEFORE any initialization
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
-    // Safety check to prevent crashing if keys are missing
-    console.log("🔍 Checking environment variables...");
+    // Comprehensive environment variable check with detailed logging
+    console.log("🔍 Environment Variables Check:");
     console.log("   NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? `✅ Set (${supabaseUrl.length} chars, starts with: ${supabaseUrl.substring(0, 20)}...)` : "❌ Missing");
     console.log("   SUPABASE_SERVICE_ROLE_KEY:", supabaseKey ? `✅ Set (${supabaseKey.length} chars)` : "❌ Missing");
     console.log("   OPENAI_API_KEY:", openaiKey ? `✅ Set (${openaiKey.length} chars)` : "❌ Missing");
+    
+    // Explicit boolean check for clearer error messages
+    const envCheck = {
+      url: !!supabaseUrl,
+      key: !!supabaseKey,
+      openai: !!openaiKey
+    };
+    
+    console.error('Environment Variables Status:', envCheck);
     
     // Debug: List all environment variables that contain "SUPABASE" or "SERVICE"
     console.log("🔍 Debugging: All env vars containing 'SUPABASE' or 'SERVICE':");
@@ -194,7 +203,9 @@ export async function POST(req: Request) {
       'SUPABASE_SERVICE_ROLE',
       'NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY',
       'SUPABASE_SERVICE_KEY',
-      'SERVICE_ROLE_KEY'
+      'SERVICE_ROLE_KEY',
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'SUPABASE_URL'
     ];
     console.log("🔍 Checking for common variations:");
     possibleNames.forEach(name => {
@@ -204,36 +215,65 @@ export async function POST(req: Request) {
       }
     });
     
+    // CRITICAL: Fail fast if environment variables are missing
     if (!supabaseUrl || !supabaseKey) {
-      console.error("❌ Build/Runtime Error: Missing Supabase Keys");
-      console.error("   Missing:", {
-        supabaseUrl: !supabaseUrl,
-        supabaseKey: !supabaseKey
+      const missingVars = [];
+      if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+      if (!supabaseKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+      
+      console.error("❌ CRITICAL ERROR: Missing Required Environment Variables");
+      console.error("   Missing variables:", missingVars);
+      console.error("   Environment Variables Status:", {
+        url: !!supabaseUrl,
+        key: !!supabaseKey
       });
+      console.error("   Action Required: Add these variables in Vercel Dashboard → Settings → Environment Variables");
+      console.error("   For local development: Add them to .env.local file");
+      
       return NextResponse.json({ 
-        error: "Server Config Error: Missing Supabase credentials",
+        error: "Server Configuration Error: Missing required environment variables",
         details: {
-          missingUrl: !supabaseUrl,
-          missingKey: !supabaseKey
+          missing: missingVars,
+          status: {
+            NEXT_PUBLIC_SUPABASE_URL: !!supabaseUrl,
+            SUPABASE_SERVICE_ROLE_KEY: !!supabaseKey
+          },
+          instructions: "Please add the missing variables in Vercel Dashboard → Settings → Environment Variables, then redeploy."
         }
       }, { status: 500 });
     }
     
-    // Validate URL format
+    // Validate URL format BEFORE initializing client
     if (!supabaseUrl.startsWith('http://') && !supabaseUrl.startsWith('https://')) {
-      console.error("❌ Invalid Supabase URL format. Expected URL like https://xxxxx.supabase.co");
-      console.error("   Current value:", supabaseUrl.substring(0, 50) + "...");
+      console.error("❌ Invalid Supabase URL format");
+      console.error("   Expected: URL like https://xxxxx.supabase.co");
+      console.error("   Received:", supabaseUrl.substring(0, 50) + "...");
+      console.error("   Action: Ensure NEXT_PUBLIC_SUPABASE_URL is set to your Supabase project URL (not the API key)");
+      
       return NextResponse.json({ 
-        error: "Server Config Error: Invalid Supabase URL format. Should be a URL like https://xxxxx.supabase.co"
+        error: "Server Configuration Error: Invalid Supabase URL format",
+        details: {
+          expected: "URL like https://xxxxx.supabase.co",
+          received: supabaseUrl.substring(0, 50) + "...",
+          instruction: "NEXT_PUBLIC_SUPABASE_URL should be your Supabase project URL, not an API key"
+        }
       }, { status: 500 });
     }
 
     if (!openaiKey) {
-      console.error("Build/Runtime Error: Missing OpenAI API Key");
-      return NextResponse.json({ error: "Server Config Error: Missing OpenAI API key" }, { status: 500 });
+      console.error("❌ Missing OpenAI API Key");
+      console.error("   Action Required: Add OPENAI_API_KEY in Vercel Dashboard → Settings → Environment Variables");
+      
+      return NextResponse.json({ 
+        error: "Server Configuration Error: Missing OpenAI API key",
+        details: {
+          instruction: "Please add OPENAI_API_KEY in Vercel Dashboard → Settings → Environment Variables, then redeploy."
+        }
+      }, { status: 500 });
     }
 
-    console.log("🔑 Initializing Supabase and OpenAI clients...");
+    // Only initialize clients AFTER all checks pass
+    console.log("🔑 All environment variables validated. Initializing clients...");
     const supabase = createClient(supabaseUrl, supabaseKey);
     const openai = new OpenAI({
       apiKey: openaiKey,
