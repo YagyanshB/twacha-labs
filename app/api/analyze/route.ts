@@ -171,6 +171,34 @@ export async function POST(req: Request) {
     console.log("   SUPABASE_SERVICE_ROLE_KEY:", supabaseKey ? `✅ Set (${supabaseKey.length} chars)` : "❌ Missing");
     console.log("   GOOGLE_GENERATIVE_AI_API_KEY:", geminiKey ? `✅ Set (${geminiKey.length} chars)` : "❌ Missing");
     
+    // Debug: List all environment variables that contain "SUPABASE" or "SERVICE"
+    console.log("🔍 Debugging: All env vars containing 'SUPABASE' or 'SERVICE':");
+    const allEnvVars = Object.keys(process.env);
+    const supabaseRelated = allEnvVars.filter(key => 
+      key.toUpperCase().includes('SUPABASE') || 
+      key.toUpperCase().includes('SERVICE')
+    );
+    supabaseRelated.forEach(key => {
+      const value = process.env[key];
+      console.log(`   ${key}: ${value ? `Set (${value.length} chars, starts with: ${value.substring(0, 20)}...)` : 'Empty'}`);
+    });
+    
+    // Check for common variations/typos
+    const possibleNames = [
+      'SUPABASE_SERVICE_ROLE_KEY',
+      'SUPABASE_SERVICE_ROLE',
+      'NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY',
+      'SUPABASE_SERVICE_KEY',
+      'SERVICE_ROLE_KEY'
+    ];
+    console.log("🔍 Checking for common variations:");
+    possibleNames.forEach(name => {
+      const value = process.env[name];
+      if (value) {
+        console.log(`   ⚠️ Found variation '${name}': Set (${value.length} chars)`);
+      }
+    });
+    
     if (!supabaseUrl || !supabaseKey) {
       console.error("❌ Build/Runtime Error: Missing Supabase Keys");
       console.error("   Missing:", {
