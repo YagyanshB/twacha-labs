@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Camera, Upload } from 'lucide-react';
-import ConsentStep from './StartFreeFlow/ConsentStep';
 import CameraStep from './StartFreeFlow/CameraStep';
 import AgeStep from './StartFreeFlow/AgeStep';
 import SkinTypeStep from './StartFreeFlow/SkinTypeStep';
