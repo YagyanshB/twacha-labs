@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, CheckCircle2 } from 'lucide-react';
 import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
@@ -26,10 +27,8 @@ export default function Home() {
   const [userData, setUserData] = useState<{ photo: string; skinType: string; age: string } | null>(null);
 
   const handleStartScan = () => {
-    // Redirect to analysis page with new StartFreeFlow
     window.location.href = '/analysis';
   };
-
 
   const handleAnalysis = async (images: string[]) => {
     setCapturedImages(images);
@@ -56,11 +55,8 @@ export default function Home() {
 
       const data = await response.json();
       
-      // Map API response to component-expected format
-      // API returns: { verdict, diagnosis, confidence, imageUrls, imagePath }
-      // Components expect: { score, verdict, analysis, recommendation, imagePath }
       const mappedResult: AnalysisResult = {
-        score: Math.round((data.confidence || 0.7) * 100), // Convert confidence (0-1) to score (0-100)
+        score: Math.round((data.confidence || 0.7) * 100),
         verdict: data.verdict || 'UNKNOWN',
         analysis: data.diagnosis || 'Analysis completed',
         recommendation: getRecommendationFromVerdict(data.verdict),
@@ -82,12 +78,10 @@ export default function Home() {
   };
 
   const handleScanComplete = async (images: string[]) => {
-    // Combine with photo from flow if available
     const allImages = userData?.photo ? [userData.photo, ...images] : images;
     handleAnalysis(allImages);
   };
 
-  // Helper function to generate recommendation based on verdict
   const getRecommendationFromVerdict = (verdict: string): string => {
     switch (verdict) {
       case 'CLEAR':
@@ -140,6 +134,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* System Status Indicator */}
+      <SystemStatusIndicator />
+      
       <AnimatePresence mode="wait">
         {funnelState === 'landing' && (
           <motion.div
@@ -149,12 +146,11 @@ export default function Home() {
             exit={{ opacity: 0 }}
           >
             <Navbar onStartScan={handleStartScan} />
-            <HeroSection onStartScan={handleStartScan} />
-            <DemoSection onStartScan={handleStartScan} />
+            <HeroComparisonSection onStartScan={handleStartScan} />
+            <ClinicalLogicSection />
             <BenefitsSection />
-            <ProductSection onOpenModal={() => setIsProductModalOpen(true)} />
-            <ReportPreviewSection onStartScan={handleStartScan} />
-            <FinalCTASection onStartScan={handleStartScan} />
+            <BetaPilotCTASection />
+            <FounderSection />
             <Footer />
           </motion.div>
         )}
@@ -222,6 +218,22 @@ export default function Home() {
   );
 }
 
+// System Status Indicator
+function SystemStatusIndicator() {
+  return (
+    <div className="system-status">
+      <div className="system-status-item">
+        <span className="status-label">SYSTEM:</span>
+        <span className="status-value operational">OPERATIONAL</span>
+      </div>
+      <div className="system-status-item">
+        <span className="status-label">MODEL:</span>
+        <span className="status-value">GEMINI 1.5 FLASH</span>
+      </div>
+    </div>
+  );
+}
+
 // Navigation
 function Navbar({ onStartScan }: { onStartScan: () => void }) {
   return (
@@ -246,7 +258,7 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
         </a>
         <div className="nav-right">
           <ul className="nav-links">
-            <li><a href="#how" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' }); }}>How it works</a></li>
+            <li><a href="#methodology" onClick={(e) => { e.preventDefault(); document.getElementById('methodology')?.scrollIntoView({ behavior: 'smooth' }); }}>Methodology</a></li>
             <li><a href="/pricing" onClick={(e) => { e.preventDefault(); window.location.href = '/pricing'; }}>Pricing</a></li>
           </ul>
           <button onClick={onStartScan} className="scan-button">Start free</button>
@@ -256,74 +268,106 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
   );
 }
 
-// Hero Section
-function HeroSection({ onStartScan }: { onStartScan: () => void }) {
+// Hero Comparison Section
+function HeroComparisonSection({ onStartScan }: { onStartScan: () => void }) {
   return (
-    <section className="hero">
-      <div className="hero-content">
-        <h1>
-          Your skin,
-          <span>decoded in seconds</span>
-        </h1>
-        <p>AI-powered analysis designed specifically for men's skin. No BS, just results.</p>
+    <section className="hero-comparison">
+      <div className="hero-comparison-container">
+        <div className="hero-header">
+          <h1>Precision Dermal Analysis for Men.</h1>
+          <p className="hero-subheadline">Stop guessing. Use clinical-grade computer vision and 15x macro-imaging to optimize your skin health. Built by AI engineers with NHS experience.</p>
+        </div>
+        
+        <div className="comparison-grid">
+          <div className="comparison-item">
+            <div className="comparison-label">Standard 1x View</div>
+            <div className="comparison-image standard-view">
+              <div className="image-placeholder">
+                <svg viewBox="0 0 400 400" fill="none">
+                  <rect width="400" height="400" fill="#f3f4f6"/>
+                  <circle cx="200" cy="200" r="80" fill="#d1d5db" opacity="0.5"/>
+                  <text x="200" y="200" textAnchor="middle" fill="#9ca3af" fontSize="16" fontFamily="system-ui">Standard Selfie</text>
+                </svg>
+              </div>
+              <div className="blur-overlay"></div>
+            </div>
+          </div>
+          
+          <div className="comparison-item">
+            <div className="comparison-label">Twacha 15x Precision View</div>
+            <div className="comparison-image macro-view">
+              <div className="image-placeholder">
+                <svg viewBox="0 0 400 400" fill="none">
+                  <rect width="400" height="400" fill="#1f2937"/>
+                  <rect x="150" y="150" width="100" height="100" fill="#374151" stroke="#10b981" strokeWidth="2"/>
+                  <circle cx="200" cy="200" r="30" fill="#4b5563"/>
+                  <circle cx="200" cy="200" r="15" fill="#6b7280"/>
+                  <text x="200" y="250" textAnchor="middle" fill="#10b981" fontSize="12" fontFamily="monospace">15x MACRO</text>
+                </svg>
+              </div>
+              <div className="bounding-box"></div>
+            </div>
+          </div>
+        </div>
+        
         <div className="hero-cta">
-          <button onClick={onStartScan} className="primary-cta">Start free scan</button>
-          <a href="#report" className="secondary-cta" onClick={(e) => { e.preventDefault(); document.getElementById('report')?.scrollIntoView({ behavior: 'smooth' }); }}>
-            View sample report
-            <span>→</span>
-          </a>
+          <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
         </div>
       </div>
     </section>
   );
 }
 
-// Demo Section
-function DemoSection({ onStartScan }: { onStartScan: () => void }) {
+// Clinical Logic Section
+function ClinicalLogicSection() {
   return (
-    <section className="demo-section" id="how">
-      <div className="demo-container">
-        <div className="demo-content">
-          <h2>Scan. Analyse. Improve.</h2>
-          <p>One selfie gives you everything you need to know about your skin. Our AI identifies issues you can't see and provides a personalised routine that actually works.</p>
-          <button onClick={onStartScan} className="primary-cta" style={{ background: 'white', color: 'black' }}>Start free analysis</button>
-        </div>
-        <div className="demo-visual">
-          <div className="phone-mockup">
-            <div className="phone-screen">
-              <div className="face-scan-container">
-                <div className="face-outline">
-                  <svg viewBox="0 0 200 240" style={{ width: '140px', height: '170px' }}>
-                    <ellipse cx="100" cy="120" rx="70" ry="90" fill="none" stroke="#ddd" strokeWidth="2" strokeDasharray="5,5" opacity="0.5"/>
-                    <circle cx="70" cy="100" r="3" fill="#0066ff" opacity="0">
-                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0s"/>
-                    </circle>
-                    <circle cx="130" cy="100" r="3" fill="#0066ff" opacity="0">
-                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.2s"/>
-                    </circle>
-                    <circle cx="100" cy="130" r="3" fill="#0066ff" opacity="0">
-                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.4s"/>
-                    </circle>
-                    <circle cx="85" cy="140" r="3" fill="#0066ff" opacity="0">
-                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.6s"/>
-                    </circle>
-                    <circle cx="115" cy="140" r="3" fill="#0066ff" opacity="0">
-                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.8s"/>
-                    </circle>
-                    <line x1="30" y1="0" x2="170" y2="0" stroke="#0066ff" strokeWidth="2" opacity="0.3">
-                      <animateTransform attributeName="transform" type="translate" from="0 30" to="0 210" dur="2s" repeatCount="indefinite"/>
-                    </line>
-                  </svg>
-                </div>
-                <div style={{ marginTop: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.5rem' }}>
-                    <div style={{ width: '40px', height: '4px', background: '#0066ff', borderRadius: '2px' }}></div>
-                    <div style={{ width: '40px', height: '4px', background: '#0066ff', borderRadius: '2px', opacity: 0.5 }}></div>
-                    <div style={{ width: '40px', height: '4px', background: '#ddd', borderRadius: '2px' }}></div>
-                  </div>
-                  <p style={{ color: 'var(--gray)', fontSize: '0.9rem' }}>Analysing skin texture...</p>
-                </div>
-              </div>
+    <section className="clinical-logic" id="methodology">
+      <div className="clinical-logic-container">
+        <h2 className="section-title">Clinical Methodology</h2>
+        
+        <div className="clinical-columns">
+          <div className="clinical-column">
+            <div className="column-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+            </div>
+            <h3>GAGS Scoring</h3>
+            <p>We use the Global Acne Grading System to provide mathematical evidence of healing progress. Track your GAGS score over time with clinical precision.</p>
+            <div className="clinical-stat">
+              <span className="stat-label">Score Range:</span>
+              <span className="stat-value">0-44</span>
+            </div>
+          </div>
+          
+          <div className="clinical-column">
+            <div className="column-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+            <h3>Ingredient Triage</h3>
+            <p>AI-driven cross-referencing of active ingredients against your specific dermal profile. Personalized recommendations based on clinical research.</p>
+            <div className="clinical-stat">
+              <span className="stat-label">Active Ingredients:</span>
+              <span className="stat-value">6+</span>
+            </div>
+          </div>
+          
+          <div className="clinical-column">
+            <div className="column-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+              </svg>
+            </div>
+            <h3>NHS Referral Ready</h3>
+            <p>Generate high-resolution clinical reports ready for GP consultations if severe markers are detected. Export PDF reports with GAGS scores and lesion mapping.</p>
+            <div className="clinical-stat">
+              <span className="stat-label">Report Format:</span>
+              <span className="stat-value">PDF</span>
             </div>
           </div>
         </div>
@@ -332,27 +376,27 @@ function DemoSection({ onStartScan }: { onStartScan: () => void }) {
   );
 }
 
-// Benefits Section
+// Benefits Section (Updated)
 function BenefitsSection() {
   return (
     <section className="benefits">
       <div className="benefits-container">
-        <h2>Here's what makes us different</h2>
+        <h2>Built for Clinical Precision</h2>
         <div className="benefit-cards">
           <div className="benefit-card">
-            <div className="benefit-number" style={{ color: '#e0e0e0' }}>01</div>
-            <h3>Built for men</h3>
-            <p>Our AI is trained specifically on male skin patterns. Thicker skin, daily shaving, higher oil production - we get it.</p>
+            <div className="benefit-number">01</div>
+            <h3>15x Macro Imaging</h3>
+            <p>Clinical-grade magnification reveals what standard cameras miss. See pore structure, texture, and early markers with precision.</p>
           </div>
           <div className="benefit-card">
-            <div className="benefit-number" style={{ color: '#e0e0e0' }}>02</div>
-            <h3>Instant results</h3>
-            <p>No waiting rooms, no appointments. Get professional-grade analysis in under 30 seconds from your phone.</p>
+            <div className="benefit-number">02</div>
+            <h3>AI-Powered Analysis</h3>
+            <p>Google Gemini 1.5 Flash processes your images with clinical knowledge base integration. Real-time GAGS scoring and lesion differentiation.</p>
           </div>
           <div className="benefit-card">
-            <div className="benefit-number" style={{ color: '#e0e0e0' }}>03</div>
-            <h3>Actually works</h3>
-            <p>Recommendations based on clinical research, not marketing. Simple routines you'll actually stick to.</p>
+            <div className="benefit-number">03</div>
+            <h3>Progress Tracking</h3>
+            <p>Mathematical evidence of healing. Track GAGS scores, extraction eligibility, and triage levels over time with clinical accuracy.</p>
           </div>
         </div>
       </div>
@@ -360,114 +404,30 @@ function BenefitsSection() {
   );
 }
 
-// Product Section - Coming Soon
-function ProductSection({ onOpenModal }: { onOpenModal: () => void }) {
+// Beta Pilot CTA Section
+function BetaPilotCTASection() {
   return (
-    <section className="product-section" style={{ background: '#18181b', padding: '5rem 2rem', borderTop: '1px solid #27272a' }}>
-      <div className="product-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <span style={{ color: '#a1a1aa', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coming Soon</span>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginTop: '0.5rem', marginBottom: '1rem', color: '#fff' }}>
-            Twacha Pro Kit
-          </h2>
-          <p style={{ color: '#a1a1aa', maxWidth: '42rem', margin: '0 auto' }}>
-            Professional-grade hardware for clinic-level analysis at home. 
-            Join the waitlist for early access.
-          </p>
-            </div>
-
-        <div style={{ maxWidth: '28rem', margin: '0 auto', background: '#000', border: '1px solid #27272a', borderRadius: '0.75rem', padding: '2rem' }}>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
-              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Medical-grade imaging
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
-              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Hospital-level accuracy
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
-              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Includes 1 year premium
-                  </li>
-              </ul>
-
-          <button 
-              onClick={onOpenModal}
-            style={{ 
-              width: '100%', 
-              background: '#27272a', 
-              color: '#71717a', 
-              padding: '0.75rem', 
-              borderRadius: '0.5rem', 
-              fontWeight: '500',
-              cursor: 'not-allowed',
-              border: 'none'
-            }}
-            disabled
-          >
-            Notify me when available
-          </button>
-          <p style={{ fontSize: '0.75rem', color: '#52525b', textAlign: 'center', marginTop: '0.75rem' }}>
-            Expected: Q2 2026
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Report Preview Section
-function ReportPreviewSection({ onStartScan }: { onStartScan: () => void }) {
-  return (
-    <section className="report-preview-section" id="report">
-      <div className="report-container">
-        <h2>See what you'll get</h2>
-        <p>A complete skin analysis with actionable recommendations</p>
+    <section className="beta-pilot-cta">
+      <div className="beta-pilot-container">
+        <h2>Apply for Beta Pilot</h2>
+        <p className="beta-date">Batch 001: Launching Feb 14, 2026</p>
+        <p className="beta-description">50 kits remaining for UK residents. Clinical-grade hardware and AI analysis for early adopters.</p>
         
-        <div className="report-mockup">
-          <div className="report-header">
-            <div className="report-title">
-              <h3>Skin Analysis Report</h3>
-              <p className="report-date">Generated 08 January 2026</p>
+        <div className="beta-cta-wrapper">
+          <button 
+            onClick={() => window.location.href = '/analysis'}
+            className="beta-pilot-button"
+          >
+            Apply for Beta Pilot (Feb 14)
+          </button>
+          
+          <div className="beta-info">
+            <p className="beta-remaining">Batch 001: 50 Kits remaining for UK residents.</p>
+            
+            <div className="privacy-badge">
+              <Lock className="lock-icon" size={14} />
+              <span>Clinical-grade encryption. Your biometric data is never sold.</span>
             </div>
-            <div className="skin-score">
-              <div className="score-number">78</div>
-              <div className="score-label">Skin health score</div>
-            </div>
-          </div>
-
-          <div className="report-insights">
-            <div className="insight-row">
-              <span className="insight-label">Skin type</span>
-              <span className="insight-value">Combination (oily T-zone)</span>
-            </div>
-            <div className="insight-row">
-              <span className="insight-label">Primary concern</span>
-              <span className="insight-value">Excess oil production</span>
-            </div>
-            <div className="insight-row">
-              <span className="insight-label">Secondary concern</span>
-              <span className="insight-value">Early signs of sun damage</span>
-              </div>
-            <div className="insight-row">
-              <span className="insight-label">Hydration level</span>
-              <span className="insight-value">Adequate</span>
-              </div>
-            <div className="insight-row">
-              <span className="insight-label">Recommended routine</span>
-              <span className="insight-value">3-step morning, 4-step evening</span>
-            </div>
-          </div>
-
-          <div className="report-cta">
-            <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
           </div>
         </div>
       </div>
@@ -475,13 +435,33 @@ function ReportPreviewSection({ onStartScan }: { onStartScan: () => void }) {
   );
 }
 
-// Final CTA Section
-function FinalCTASection({ onStartScan }: { onStartScan: () => void }) {
+// Founder Section
+function FounderSection() {
   return (
-    <section className="final-cta">
-      <h2>Ready to level up your skin?</h2>
-      <p>Join thousands of men taking control of their skin health. Free analysis, no commitment.</p>
-      <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
+    <section className="founder-section">
+      <div className="founder-container">
+        <div className="founder-content">
+          <div className="founder-header">
+            <h2>Founder's Note</h2>
+          </div>
+          
+          <div className="founder-bio">
+            <div className="founder-name">
+              <h3>Yagyansh Bagri</h3>
+              <p className="founder-title">AI Engineer & Founder</p>
+            </div>
+            
+            <div className="founder-details">
+              <p>
+                Formerly at NHS Trusts & University of Nottingham. Building the Strava for Skin.
+              </p>
+              <p className="founder-achievement">
+                Completed £500k English Channel Swim — demonstrating the same grit and high-agency we bring to clinical AI development.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
