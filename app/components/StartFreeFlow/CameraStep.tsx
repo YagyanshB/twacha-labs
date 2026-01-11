@@ -1,49 +1,88 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Camera, Upload, Check, Image as ImageIcon, X } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Camera, Upload, Check, Image as ImageIcon, X, Loader2, AlertCircle } from 'lucide-react';
 import Webcam from 'react-webcam';
+import { uploadImageToSupabase } from '@/lib/image-upload';
 
 interface CameraStepProps {
-  onCapture: (image: string) => void;
+  onCapture: (imageUrl: string) => void;
   onBack: () => void;
 }
 
 type Mode = 'camera' | 'upload';
 
+interface ValidationState {
+  faceDetected: boolean;
+  centered: boolean;
+  goodLighting: boolean;
+  correctDistance: boolean;
+  statusMessage: string;
+}
+
 export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   const [mode, setMode] = useState<Mode>('camera');
-  const [faceDetected, setFaceDetected] = useState(false);
-  const [centered, setCentered] = useState(false);
-  const [goodLighting, setGoodLighting] = useState(false);
-  const [correctDistance, setCorrectDistance] = useState(false);
+  const [validation, setValidation] = useState<ValidationState>({
+    faceDetected: false,
+    centered: false,
+    goodLighting: false,
+    correctDistance: false,
+    statusMessage: 'Initializing camera...',
+  });
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lightingCanvasRef = useRef<HTMLCanvasElement>(null);
+  const modelRef = useRef<any>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const validationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const allConditionsMet = faceDetected && centered && goodLighting && correctDistance;
+  const allConditionsMet = validation.faceDetected && validation.centered && validation.goodLighting && validation.correctDistance;
 
-  const handleCapture = () => {
+  const handleImageUpload = async (imageData: string | File) => {
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      const userId = 'temp_user_id';
+      const imageUrl = await uploadImageToSupabase(imageData, userId);
+      onCapture(imageUrl);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setUploadError(error.message || 'Failed to upload image. Please try again.');
+      setIsUploading(false);
+    }
+  };
+
+  const handleCapture = async () => {
     if (webcamRef.current && allConditionsMet) {
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
         setCapturedImage(imageSrc);
-        onCapture(imageSrc);
+        await handleImageUpload(imageSrc);
       }
     }
   };
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const result = reader.result as string;
         setPreviewImage(result);
         setCapturedImage(result);
-        onCapture(result);
+        await handleImageUpload(file);
       };
       reader.readAsDataURL(file);
     }
@@ -79,35 +118,236 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
     }
   };
 
-  // Simulate face detection conditions (UI only - no actual detection)
-  const simulateConditions = () => {
-    setFaceDetected(false);
-    setCentered(false);
-    setGoodLighting(false);
-    setCorrectDistance(false);
-    setTimeout(() => setFaceDetected(true), 500);
-    setTimeout(() => setCentered(true), 1000);
-    setTimeout(() => setGoodLighting(true), 1500);
-    setTimeout(() => setCorrectDistance(true), 2000);
-  };
+  // Native lighting check using Canvas
+  const checkLighting = useCallback((video: HTMLVideoElement): boolean => {
+    if (!lightingCanvasRef.current) return false;
 
-  useEffect(() => {
-    if (mode === 'camera') {
-      simulateConditions();
+    const canvas = lightingCanvasRef.current;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return false;
+
+    // Draw video frame to tiny 10x10 canvas
+    ctx.drawImage(video, 0, 0, 10, 10);
+    
+    // Get pixel data
+    const imageData = ctx.getImageData(0, 0, 10, 10);
+    const pixels = imageData.data;
+    
+    // Calculate average brightness (RGB average)
+    let totalBrightness = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
     }
+    
+    const averageBrightness = totalBrightness / (pixels.length / 4);
+    
+    // Good lighting: between 40 and 200
+    return averageBrightness >= 40 && averageBrightness <= 200;
+  }, []);
+
+  // Face detection and validation
+  const validateFrame = useCallback(async () => {
+    if (typeof window === 'undefined' || !webcamRef.current || !modelRef.current) {
+      return;
+    }
+
+    const video = webcamRef.current.video;
+    if (!video || video.readyState !== 4) {
+      return;
+    }
+
+    try {
+      // Check lighting first (no model needed)
+      const lightingGood = checkLighting(video);
+      
+      // Run face detection
+      const predictions = await modelRef.current.estimateFaces(video, false);
+      
+      if (predictions.length === 0) {
+        setValidation(prev => ({
+          ...prev,
+          faceDetected: false,
+          centered: false,
+          correctDistance: false,
+          goodLighting: lightingGood,
+          statusMessage: 'Position your face in the frame',
+        }));
+        return;
+      }
+
+      const face = predictions[0];
+      const boundingBox = face.topLeft as [number, number];
+      const bottomRight = face.bottomRight as [number, number];
+      
+      const faceWidth = bottomRight[0] - boundingBox[0];
+      const faceHeight = bottomRight[1] - boundingBox[1];
+      const faceCenterX = boundingBox[0] + faceWidth / 2;
+      const faceCenterY = boundingBox[1] + faceHeight / 2;
+      
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      
+      // Centered check: face center within 20% of viewport center
+      const centerX = videoWidth / 2;
+      const centerY = videoHeight / 2;
+      const toleranceX = videoWidth * 0.2;
+      const toleranceY = videoHeight * 0.2;
+      
+      const isCentered = 
+        Math.abs(faceCenterX - centerX) < toleranceX &&
+        Math.abs(faceCenterY - centerY) < toleranceY;
+      
+      // Distance check: face width should be 50-70% of canvas width
+      const faceWidthPercent = (faceWidth / videoWidth) * 100;
+      const correctDistance = faceWidthPercent >= 50 && faceWidthPercent <= 70;
+      
+      // Determine status message
+      let statusMessage = 'All conditions met!';
+      if (!lightingGood) {
+        const canvas = lightingCanvasRef.current;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, 10, 10);
+            const imageData = ctx.getImageData(0, 0, 10, 10);
+            const pixels = imageData.data;
+            let totalBrightness = 0;
+            for (let i = 0; i < pixels.length; i += 4) {
+              totalBrightness += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+            }
+            const avg = totalBrightness / (pixels.length / 4);
+            statusMessage = avg < 40 ? 'Too dark - Find a light source' : 'Too bright - Reduce lighting';
+          }
+        }
+      } else if (!isCentered) {
+        statusMessage = 'Center your face in the frame';
+      } else if (!correctDistance) {
+        statusMessage = faceWidthPercent < 50 
+          ? 'Move closer to the camera' 
+          : 'Move further from the camera';
+      }
+      
+      setValidation({
+        faceDetected: true,
+        centered: isCentered,
+        goodLighting: lightingGood,
+        correctDistance: correctDistance,
+        statusMessage,
+      });
+    } catch (error) {
+      console.error('Validation error:', error);
+    }
+  }, [checkLighting]);
+
+  // Load BlazeFace model dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined' || mode !== 'camera') {
+      return;
+    }
+
+    let mounted = true;
+
+    const loadModel = async () => {
+      try {
+        // Dynamic import - Vercel build safe
+        const blazeface = await import('@tensorflow-models/blazeface');
+        const tf = await import('@tensorflow/tfjs');
+        
+        // Initialize TensorFlow.js backend
+        await tf.ready();
+        
+        // Load BlazeFace model
+        const model = await blazeface.load();
+        
+        if (mounted) {
+          modelRef.current = model;
+          setValidation(prev => ({
+            ...prev,
+            statusMessage: 'Camera ready - Position your face',
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading BlazeFace model:', error);
+        if (mounted) {
+          setValidation(prev => ({
+            ...prev,
+            statusMessage: 'Camera initialization failed - Please refresh',
+          }));
+        }
+      }
+    };
+
+    loadModel();
+
+    return () => {
+      mounted = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (validationIntervalRef.current) {
+        clearInterval(validationIntervalRef.current);
+      }
+    };
   }, [mode]);
+
+  // Start validation loop when camera is ready
+  useEffect(() => {
+    if (typeof window === 'undefined' || mode !== 'camera' || !modelRef.current) {
+      return;
+    }
+
+    const video = webcamRef.current?.video;
+    if (!video) {
+      return;
+    }
+
+    const startValidation = () => {
+      if (video.readyState === 4) {
+        // Run validation every 500ms
+        validationIntervalRef.current = setInterval(() => {
+          validateFrame();
+        }, 500);
+      } else {
+        video.addEventListener('loadedmetadata', startValidation, { once: true });
+      }
+    };
+
+    startValidation();
+
+    return () => {
+      if (validationIntervalRef.current) {
+        clearInterval(validationIntervalRef.current);
+      }
+    };
+  }, [mode, validateFrame]);
 
   const handleRetake = () => {
     setCapturedImage(null);
     setPreviewImage(null);
-    if (mode === 'camera') {
-      simulateConditions();
-    }
+    setValidation({
+      faceDetected: false,
+      centered: false,
+      goodLighting: false,
+      correctDistance: false,
+      statusMessage: 'Position your face in the frame',
+    });
   };
 
   return (
     <div className="camera-step">
       <div className="camera-step-content">
+        {/* Hidden canvas for lighting detection */}
+        <canvas
+          ref={lightingCanvasRef}
+          width={10}
+          height={10}
+          style={{ display: 'none' }}
+        />
+
         {/* Title */}
         <div className="funnel-header">
           <h1>{mode === 'camera' ? 'Take your photo' : 'Upload your photo'}</h1>
@@ -160,6 +400,18 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                       facingMode: 'user',
                     }}
                   />
+                  
+                  {/* Status Message Overlay */}
+                  {validation.statusMessage && (
+                    <div className="status-message-overlay">
+                      <div className="status-message-content">
+                        {!allConditionsMet && (
+                          <AlertCircle className="w-4 h-4 text-amber-500" />
+                        )}
+                        <span className="status-message-text">{validation.statusMessage}</span>
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Face Guide Overlay */}
                   <div className="face-guide">
@@ -218,20 +470,27 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           <div className="checklist">
             <ChecklistItem
               label="Face detected"
-              checked={faceDetected}
+              checked={validation.faceDetected}
             />
             <ChecklistItem
               label="Centered"
-              checked={centered}
+              checked={validation.centered}
             />
             <ChecklistItem
               label="Good lighting"
-              checked={goodLighting}
+              checked={validation.goodLighting}
             />
             <ChecklistItem
               label="Correct distance"
-              checked={correctDistance}
+              checked={validation.correctDistance}
             />
+          </div>
+        )}
+
+        {/* Upload Error Message */}
+        {uploadError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            <p className="text-sm">{uploadError}</p>
           </div>
         )}
 
@@ -242,15 +501,25 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
               {!capturedImage ? (
                 <button
                   onClick={handleCapture}
-                  disabled={!allConditionsMet}
-                  className={`primary-cta camera-button ${!allConditionsMet ? 'disabled' : ''}`}
+                  disabled={!allConditionsMet || isUploading}
+                  className={`primary-cta camera-button ${!allConditionsMet || isUploading ? 'disabled' : ''}`}
                 >
-                  <Camera className="button-icon" />
-                  Capture photo
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="button-icon animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="button-icon" />
+                      Capture photo
+                    </>
+                  )}
                 </button>
               ) : (
                 <button
                   onClick={handleRetake}
+                  disabled={isUploading}
                   className="secondary-cta camera-button"
                 >
                   Retake photo
@@ -262,6 +531,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
               {!previewImage ? (
                 <button
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
                   className="primary-cta camera-button"
                 >
                   <Upload className="button-icon" />
@@ -270,6 +540,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
               ) : (
                 <button
                   onClick={handleRetake}
+                  disabled={isUploading}
                   className="secondary-cta camera-button"
                 >
                   Choose different photo

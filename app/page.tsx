@@ -273,6 +273,14 @@ function HeroSection({ onStartScan }: { onStartScan: () => void }) {
             <span>→</span>
           </a>
         </div>
+        <div className="mt-4">
+          <a 
+            href="/privacy" 
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            How we protect your data
+          </a>
+        </div>
       </div>
     </section>
   );

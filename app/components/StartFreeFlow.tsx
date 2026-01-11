@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Camera, Upload } from 'lucide-react';
+import ConsentStep from './StartFreeFlow/ConsentStep';
 import CameraStep from './StartFreeFlow/CameraStep';
 import AgeStep from './StartFreeFlow/AgeStep';
 import SkinTypeStep from './StartFreeFlow/SkinTypeStep';
 import LoadingStep from './StartFreeFlow/LoadingStep';
 
 export interface StartFreeFlowData {
-  image: string | null;
+  imageUrl: string | null;
   age: string | null;
   skinType: string | null;
 }
@@ -19,15 +20,19 @@ interface StartFreeFlowProps {
 }
 
 export default function StartFreeFlow({ onComplete, onBack }: StartFreeFlowProps) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // Start with consent step (0)
   const [data, setData] = useState<StartFreeFlowData>({
-    image: null,
+    imageUrl: null,
     age: null,
     skinType: null,
   });
 
-  const handleImageCapture = (image: string) => {
-    setData({ ...data, image });
+  const handleConsent = () => {
+    setStep(1); // Move to camera step after consent
+  };
+
+  const handleImageCapture = (imageUrl: string) => {
+    setData({ ...data, imageUrl });
     setStep(2);
   };
 
@@ -49,7 +54,7 @@ export default function StartFreeFlow({ onComplete, onBack }: StartFreeFlowProps
   };
 
   const handleBack = () => {
-    if (step === 1) {
+    if (step === 0) {
       onBack?.();
     } else {
       setStep(step - 1);
@@ -85,13 +90,18 @@ export default function StartFreeFlow({ onComplete, onBack }: StartFreeFlowProps
             <span className="logo-text" style={{ color: isCameraStep ? '#fff' : '#000' }}>Twacha Labs</span>
           </button>
           <div className="nav-right">
-            <span className="text-sm" style={{ color: isCameraStep ? 'rgba(255, 255, 255, 0.7)' : 'var(--gray)' }}>Step {step} of 3</span>
+            <span className="text-sm" style={{ color: isCameraStep ? 'rgba(255, 255, 255, 0.7)' : 'var(--gray)' }}>
+              {step === 0 ? 'Consent' : `Step ${step} of 3`}
+            </span>
           </div>
         </div>
       </nav>
 
       {/* Step Content */}
       <div className={`funnel-content ${isCameraStep ? 'camera-funnel-content' : ''}`}>
+        {step === 0 && (
+          <ConsentStep onConsent={handleConsent} onBack={handleBack} />
+        )}
         {step === 1 && (
           <CameraStep onCapture={handleImageCapture} onBack={handleBack} />
         )}
