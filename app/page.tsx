@@ -1,50 +1,229 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import WaitlistForm from './components/WaitlistForm';
-import { Camera, Scissors, Bandage, FileText, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import FaceIDScanner from './components/FaceIDScanner';
+import EmailGate from './components/EmailGate';
+import ResultsDashboard from './components/ResultsDashboard';
+import ProductModal from './components/ProductModal';
+
+type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
+
+interface AnalysisResult {
+  score: number;
+  verdict: string;
+  analysis: string;
+  recommendation: string;
+  imagePath?: string | null;
+}
 
 export default function Home() {
-  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [funnelState, setFunnelState] = useState<FunnelState>('landing');
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [userData, setUserData] = useState<{ photo: string; skinType: string; age: string } | null>(null);
 
-  const handleWaitlistSubmit = async (email: string, consentGiven: boolean) => {
+  const handleStartScan = () => {
+    // Redirect to analysis page with new StartFreeFlow
+    window.location.href = '/analysis';
+  };
+
+
+  const handleAnalysis = async (images: string[]) => {
+    setCapturedImages(images);
+    setFunnelState('analyzing');
+
     try {
-      const response = await fetch('/api/waitlist', {
+      const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, consent_given: consentGiven }),
+        body: JSON.stringify({ 
+          images, 
+          email: null,
+          skinType: userData?.skinType,
+          age: userData?.age,
+        }),
       });
 
-      if (response.ok) {
-        setWaitlistSubmitted(true);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Analysis failed');
       }
+
+      const data = await response.json();
+      
+      // Map API response to component-expected format
+      // API returns: { verdict, diagnosis, confidence, imageUrls, imagePath }
+      // Components expect: { score, verdict, analysis, recommendation, imagePath }
+      const mappedResult: AnalysisResult = {
+        score: Math.round((data.confidence || 0.7) * 100), // Convert confidence (0-1) to score (0-100)
+        verdict: data.verdict || 'UNKNOWN',
+        analysis: data.diagnosis || 'Analysis completed',
+        recommendation: getRecommendationFromVerdict(data.verdict),
+        imagePath: data.imagePath || data.imageUrls?.[0] || null,
+      };
+      
+      setAnalysisResult(mappedResult);
+      setFunnelState('email-gate');
     } catch (error) {
-      console.error('Waitlist submission error:', error);
+      console.error('Analysis error:', error);
+      setAnalysisResult({
+        score: 65,
+        verdict: 'CAUTION',
+        analysis: 'Unable to complete analysis. Please try again.',
+        recommendation: 'The Founder\'s Kit',
+      });
+      setFunnelState('email-gate');
     }
   };
 
-  const handleViewSampleReport = () => {
-    window.location.href = '/analysis?sample=true';
+  const handleScanComplete = async (images: string[]) => {
+    // Combine with photo from flow if available
+    const allImages = userData?.photo ? [userData.photo, ...images] : images;
+    handleAnalysis(allImages);
+  };
+
+  // Helper function to generate recommendation based on verdict
+  const getRecommendationFromVerdict = (verdict: string): string => {
+    switch (verdict) {
+      case 'CLEAR':
+        return 'Maintenance Routine';
+      case 'POP':
+        return 'Extraction Protocol';
+      case 'STOP':
+        return 'Professional Consultation Recommended';
+      case 'DOCTOR':
+        return 'Professional Evaluation Recommended';
+      default:
+        return 'The Founder\'s Kit';
+    }
+  };
+
+  const handleEmailSubmit = async (email: string) => {
+    setUserEmail(email);
+    
+    try {
+      await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (analysisResult?.imagePath) {
+        try {
+          await fetch('/api/scan-logs/update', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              email, 
+              imagePath: analysisResult.imagePath 
+            }),
+          });
+        } catch (updateError) {
+          console.error('Scan log update error:', updateError);
+        }
+      }
+    } catch (error) {
+      console.error('Email save error:', error);
+    }
+
+    setFunnelState('results');
   };
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
-      <HeroSection onSubmit={handleWaitlistSubmit} waitlistSubmitted={waitlistSubmitted} />
-      <ThreeStepProtocolSection />
-      <NHSProofSection />
-      <ProductShowcaseSection />
-      <SampleReportSection onViewSample={handleViewSampleReport} />
-      <Footer onSubmit={handleWaitlistSubmit} />
+      <AnimatePresence mode="wait">
+        {funnelState === 'landing' && (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Navbar onStartScan={handleStartScan} />
+            <HeroSection onStartScan={handleStartScan} />
+            <DemoSection onStartScan={handleStartScan} />
+            <BenefitsSection />
+            <ProductSection onOpenModal={() => setIsProductModalOpen(true)} />
+            <ReportPreviewSection onStartScan={handleStartScan} />
+            <FinalCTASection onStartScan={handleStartScan} />
+            <Footer />
+          </motion.div>
+        )}
+
+        {funnelState === 'scanning' && (
+          <motion.div
+            key="scanning"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <FaceIDScanner
+              onComplete={handleScanComplete}
+              onBack={() => setFunnelState('landing')}
+            />
+          </motion.div>
+        )}
+
+        {funnelState === 'analyzing' && (
+          <motion.div
+            key="analyzing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="min-h-screen flex items-center justify-center bg-white"
+          >
+            <AnalysisLoading />
+          </motion.div>
+        )}
+
+        {funnelState === 'email-gate' && analysisResult && (
+          <motion.div
+            key="email-gate"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <EmailGate
+              analysisResult={analysisResult}
+              onSubmit={handleEmailSubmit}
+            />
+          </motion.div>
+        )}
+
+        {funnelState === 'results' && analysisResult && (
+          <motion.div
+            key="results"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <ResultsDashboard
+              analysisResult={analysisResult}
+              email={userEmail}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ProductModal
+        isOpen={isProductModalOpen}
+        onClose={() => setIsProductModalOpen(false)}
+      />
     </div>
   );
 }
 
 // Navigation
-function Navbar() {
+function Navbar({ onStartScan }: { onStartScan: () => void }) {
   return (
     <nav>
       <div className="nav-container">
@@ -67,272 +246,281 @@ function Navbar() {
         </a>
         <div className="nav-right">
           <ul className="nav-links">
-            <li><a href="#protocol" onClick={(e) => { e.preventDefault(); document.getElementById('protocol')?.scrollIntoView({ behavior: 'smooth' }); }}>How it works</a></li>
+            <li><a href="#how" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' }); }}>How it works</a></li>
             <li><a href="/pricing" onClick={(e) => { e.preventDefault(); window.location.href = '/pricing'; }}>Pricing</a></li>
           </ul>
+          <button onClick={onStartScan} className="scan-button">Start free</button>
         </div>
       </div>
     </nav>
   );
 }
 
-// Hero Section - Waitlist Engine
-function HeroSection({ onSubmit, waitlistSubmitted }: { onSubmit: (email: string, consent: boolean) => void; waitlistSubmitted: boolean }) {
+// Hero Section
+function HeroSection({ onStartScan }: { onStartScan: () => void }) {
   return (
     <section className="hero">
       <div className="hero-content">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="font-sans tracking-tight">
-            Professional Dermal Analysis.
-            <span className="block mt-2">In Your Pocket.</span>
-          </h1>
-          <p className="text-lg text-slate-600 mt-4 max-w-2xl mx-auto font-sans">
-            Twacha Labs uses 15x macro-imaging to decode men's skin. Join the Batch 001 Pilot—Shipping Feb 14th.
-          </p>
-        </motion.div>
-
-        {!waitlistSubmitted ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="mt-8"
-          >
-            <WaitlistForm onSubmit={onSubmit} variant="hero" />
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mt-8 p-6 bg-green-50 border border-green-200 rounded-lg"
-          >
-            <p className="text-green-900 font-medium font-sans">✓ You're on the list! Check your email for confirmation.</p>
-          </motion.div>
-        )}
-
-        {/* Product Shot Placeholder */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          className="mt-12 max-w-md mx-auto"
-        >
-          <div className="bg-slate-100 rounded-2xl p-8 border border-slate-200">
-            <div className="aspect-[9/16] bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl flex items-center justify-center">
-              <div className="text-center">
-                <Camera className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                <p className="text-sm text-slate-500 font-sans">15x Macro Lens</p>
-              </div>
+        <h1>
+          Your skin,
+          <span>decoded in seconds</span>
+        </h1>
+        <p>AI-powered analysis designed specifically for men's skin. No BS, just results.</p>
+        <div className="hero-cta">
+          <button onClick={onStartScan} className="primary-cta">Start free scan</button>
+          <a href="#report" className="secondary-cta" onClick={(e) => { e.preventDefault(); document.getElementById('report')?.scrollIntoView({ behavior: 'smooth' }); }}>
+            View sample report
+            <span>→</span>
+          </a>
         </div>
-      </div>
-        </motion.div>
-
-        {/* System Status Ticker */}
-      <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="mt-12"
-        >
-          <SystemStatusTicker />
-            </motion.div>
+        <div className="mt-4">
+          <a 
+            href="/privacy" 
+            className="text-sm text-gray-500 hover:text-gray-700 underline"
+          >
+            How we protect your data
+          </a>
+        </div>
       </div>
     </section>
   );
 }
 
-// Three-Step Protocol Section
-function ThreeStepProtocolSection() {
+// Demo Section
+function DemoSection({ onStartScan }: { onStartScan: () => void }) {
   return (
-    <section id="protocol" className="py-20 bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-3xl md:text-4xl font-semibold text-slate-900 mb-4 font-sans tracking-tight">The Three-Step Protocol</h2>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            {
-              step: 'THE LENS',
-              title: 'Clip on the 15x Twacha Macro-Lens',
-              description: 'Attach our precision macro lens to your phone camera for clinical-grade imaging.',
-              icon: Camera,
-            },
-            {
-              step: 'THE SCAN',
-              title: 'AI decodes your dermal integrity in seconds',
-              description: 'Our GPT-4o powered analysis identifies issues you cannot see with the naked eye.',
-              icon: Camera,
-            },
-            {
-              step: 'THE CURE',
-              title: 'Deploy sterile tools and patches for 44-hour healing',
-              description: 'Use precision lancets and hydrocolloid patches for professional-grade extraction and recovery.',
-              icon: Bandage,
-            },
-          ].map((item, index) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.6 }}
-                className="bg-white rounded-lg p-6 border border-slate-200 shadow-sm"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-white" strokeWidth={1.5} />
-                  </div>
-                  <span className="text-xs font-mono text-slate-500 uppercase tracking-wider">{item.step}</span>
+    <section className="demo-section" id="how">
+      <div className="demo-container">
+        <div className="demo-content">
+          <h2>Scan. Analyse. Improve.</h2>
+          <p>One selfie gives you everything you need to know about your skin. Our AI identifies issues you can't see and provides a personalised routine that actually works.</p>
+          <button onClick={onStartScan} className="primary-cta" style={{ background: 'white', color: 'black' }}>Start free analysis</button>
+        </div>
+        <div className="demo-visual">
+          <div className="phone-mockup">
+            <div className="phone-screen">
+              <div className="face-scan-container">
+                <div className="face-outline">
+                  <svg viewBox="0 0 200 240" style={{ width: '140px', height: '170px' }}>
+                    <ellipse cx="100" cy="120" rx="70" ry="90" fill="none" stroke="#ddd" strokeWidth="2" strokeDasharray="5,5" opacity="0.5"/>
+                    <circle cx="70" cy="100" r="3" fill="#0066ff" opacity="0">
+                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0s"/>
+                    </circle>
+                    <circle cx="130" cy="100" r="3" fill="#0066ff" opacity="0">
+                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.2s"/>
+                    </circle>
+                    <circle cx="100" cy="130" r="3" fill="#0066ff" opacity="0">
+                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.4s"/>
+                    </circle>
+                    <circle cx="85" cy="140" r="3" fill="#0066ff" opacity="0">
+                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.6s"/>
+                    </circle>
+                    <circle cx="115" cy="140" r="3" fill="#0066ff" opacity="0">
+                      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.8s"/>
+                    </circle>
+                    <line x1="30" y1="0" x2="170" y2="0" stroke="#0066ff" strokeWidth="2" opacity="0.3">
+                      <animateTransform attributeName="transform" type="translate" from="0 30" to="0 210" dur="2s" repeatCount="indefinite"/>
+                    </line>
+                  </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2 font-sans">{item.title}</h3>
-                <p className="text-sm text-slate-600 font-sans">{item.description}</p>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// NHS Triage Proof Section
-function NHSProofSection() {
-  return (
-    <section className="py-20 bg-white">
-      <div className="max-w-4xl mx-auto px-4">
-          <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="bg-slate-50 rounded-lg p-8 border border-slate-200"
-        >
-          <div className="flex items-start gap-4 mb-4">
-            <FileText className="w-6 h-6 text-slate-600 flex-shrink-0 mt-1" strokeWidth={1.5} />
-            <div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2 font-sans">GP-Ready Reports</h3>
-              <p className="text-slate-600 font-sans leading-relaxed">
-                Our AI doesn't just scan; it documents. Every analysis is exportable as a clinical PDF, designed to fast-track your NHS dermatology referrals if severe markers are detected.
-              </p>
+                <div style={{ marginTop: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ width: '40px', height: '4px', background: '#0066ff', borderRadius: '2px' }}></div>
+                    <div style={{ width: '40px', height: '4px', background: '#0066ff', borderRadius: '2px', opacity: 0.5 }}></div>
+                    <div style={{ width: '40px', height: '4px', background: '#ddd', borderRadius: '2px' }}></div>
+                  </div>
+                  <p style={{ color: 'var(--gray)', fontSize: '0.9rem' }}>Analysing skin texture...</p>
+                </div>
+              </div>
             </div>
           </div>
-            </motion.div>
-      </div>
-    </section>
-  );
-}
-
-// Product Showcase Section
-function ProductShowcaseSection() {
-  return (
-    <section className="py-20 bg-slate-900 text-white">
-      <div className="max-w-6xl mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-3xl md:text-4xl font-semibold mb-4 font-sans tracking-tight">The Founder's Kit</h2>
-          <p className="text-slate-400 font-sans">Join 100+ founding researchers. Get early access to the 15x Macro-AI suite and the Precision Dermal Kit.</p>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {[
-            { icon: Camera, name: '15x Macro Lens', description: 'Clinical-grade imaging' },
-            { icon: Scissors, name: 'Sterile Lancets', description: 'Precision extraction tools' },
-            { icon: Bandage, name: 'Hydrocolloid Patches', description: '44-hour healing support' },
-          ].map((item, index) => {
-            const Icon = item.icon;
-            return (
-            <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.6 }}
-                className="bg-slate-800 rounded-lg p-6 border border-slate-700"
-              >
-                <Icon className="w-8 h-8 text-slate-400 mb-4" strokeWidth={1.5} />
-                <h3 className="text-lg font-semibold mb-2 font-sans">{item.name}</h3>
-                <p className="text-sm text-slate-400 font-sans">{item.description}</p>
-            </motion.div>
-            );
-          })}
         </div>
       </div>
     </section>
   );
 }
 
-// Sample Report Section
-function SampleReportSection({ onViewSample }: { onViewSample: () => void }) {
+// Benefits Section
+function BenefitsSection() {
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-4xl mx-auto px-4 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-3xl font-semibold text-slate-900 mb-4 font-sans tracking-tight">See What You'll Get</h2>
-          <p className="text-slate-600 mb-8 font-sans">View a sample clinical report to see the quality of analysis you'll receive.</p>
-          <button
-            onClick={onViewSample}
-            className="px-8 py-3 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors font-sans"
-          >
-            View Sample Report
-          </button>
-        </motion.div>
+    <section className="benefits">
+      <div className="benefits-container">
+        <h2>Here's what makes us different</h2>
+        <div className="benefit-cards">
+          <div className="benefit-card">
+            <div className="benefit-number" style={{ color: '#e0e0e0' }}>01</div>
+            <h3>Built for men</h3>
+            <p>Our AI is trained specifically on male skin patterns. Thicker skin, daily shaving, higher oil production - we get it.</p>
+          </div>
+          <div className="benefit-card">
+            <div className="benefit-number" style={{ color: '#e0e0e0' }}>02</div>
+            <h3>Instant results</h3>
+            <p>No waiting rooms, no appointments. Get professional-grade analysis in under 30 seconds from your phone.</p>
+          </div>
+          <div className="benefit-card">
+            <div className="benefit-number" style={{ color: '#e0e0e0' }}>03</div>
+            <h3>Actually works</h3>
+            <p>Recommendations based on clinical research, not marketing. Simple routines you'll actually stick to.</p>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-// Footer with Waitlist Form
-function Footer({ onSubmit }: { onSubmit: (email: string, consent: boolean) => void }) {
+// Product Section - Coming Soon
+function ProductSection({ onOpenModal }: { onOpenModal: () => void }) {
   return (
-    <footer className="bg-slate-50 border-t border-slate-200 py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8 mb-8">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 font-sans">Join the Lab</h3>
-            <p className="text-sm text-slate-600 mb-4 font-sans">
-              The Future of Men's Skin. Shipping Feb 14th.
-            </p>
-            <WaitlistForm onSubmit={onSubmit} variant="footer" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4 font-sans">Company</h3>
-            <ul className="space-y-2 text-sm text-slate-600 font-sans">
-              <li><a href="/privacy" className="hover:text-slate-900">Privacy</a></li>
-              <li><a href="#" className="hover:text-slate-900">Terms</a></li>
-              <li><a href="#" className="hover:text-slate-900">Contact</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="pt-8 border-t border-slate-200 text-center">
-          <p className="text-xs text-slate-500 font-sans">
-            <a href="/privacy" className="underline hover:text-slate-700">How we protect your data</a>
+    <section className="product-section" style={{ background: '#18181b', padding: '5rem 2rem', borderTop: '1px solid #27272a' }}>
+      <div className="product-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <span style={{ color: '#a1a1aa', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coming Soon</span>
+          <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginTop: '0.5rem', marginBottom: '1rem', color: '#fff' }}>
+            Twacha Pro Kit
+          </h2>
+          <p style={{ color: '#a1a1aa', maxWidth: '42rem', margin: '0 auto' }}>
+            Professional-grade hardware for clinic-level analysis at home. 
+            Join the waitlist for early access.
           </p>
-          <p className="text-xs text-slate-400 mt-2 font-sans">© 2025 Twacha Labs. All rights reserved.</p>
+            </div>
+
+        <div style={{ maxWidth: '28rem', margin: '0 auto', background: '#000', border: '1px solid #27272a', borderRadius: '0.75rem', padding: '2rem' }}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
+              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Medical-grade imaging
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
+              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Hospital-level accuracy
+            </li>
+            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
+              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Includes 1 year premium
+                  </li>
+              </ul>
+
+          <button 
+              onClick={onOpenModal}
+            style={{ 
+              width: '100%', 
+              background: '#27272a', 
+              color: '#71717a', 
+              padding: '0.75rem', 
+              borderRadius: '0.5rem', 
+              fontWeight: '500',
+              cursor: 'not-allowed',
+              border: 'none'
+            }}
+            disabled
+          >
+            Notify me when available
+          </button>
+          <p style={{ fontSize: '0.75rem', color: '#52525b', textAlign: 'center', marginTop: '0.75rem' }}>
+            Expected: Q2 2026
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Report Preview Section
+function ReportPreviewSection({ onStartScan }: { onStartScan: () => void }) {
+  return (
+    <section className="report-preview-section" id="report">
+      <div className="report-container">
+        <h2>See what you'll get</h2>
+        <p>A complete skin analysis with actionable recommendations</p>
+        
+        <div className="report-mockup">
+          <div className="report-header">
+            <div className="report-title">
+              <h3>Skin Analysis Report</h3>
+              <p className="report-date">Generated 08 January 2026</p>
+            </div>
+            <div className="skin-score">
+              <div className="score-number">78</div>
+              <div className="score-label">Skin health score</div>
+            </div>
+          </div>
+
+          <div className="report-insights">
+            <div className="insight-row">
+              <span className="insight-label">Skin type</span>
+              <span className="insight-value">Combination (oily T-zone)</span>
+            </div>
+            <div className="insight-row">
+              <span className="insight-label">Primary concern</span>
+              <span className="insight-value">Excess oil production</span>
+            </div>
+            <div className="insight-row">
+              <span className="insight-label">Secondary concern</span>
+              <span className="insight-value">Early signs of sun damage</span>
+              </div>
+            <div className="insight-row">
+              <span className="insight-label">Hydration level</span>
+              <span className="insight-value">Adequate</span>
+              </div>
+            <div className="insight-row">
+              <span className="insight-label">Recommended routine</span>
+              <span className="insight-value">3-step morning, 4-step evening</span>
+            </div>
+          </div>
+
+          <div className="report-cta">
+            <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Final CTA Section
+function FinalCTASection({ onStartScan }: { onStartScan: () => void }) {
+  return (
+    <section className="final-cta">
+      <h2>Ready to level up your skin?</h2>
+      <p>Join thousands of men taking control of their skin health. Free analysis, no commitment.</p>
+      <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
+    </section>
+  );
+}
+
+// Footer
+function Footer() {
+  return (
+    <footer>
+      <div className="footer-content">
+        <div className="footer-brand">Twacha Labs</div>
+        <div className="footer-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Contact</a>
         </div>
       </div>
     </footer>
+  );
+}
+
+// Analysis Loading Component
+function AnalysisLoading() {
+  return (
+    <div className="text-center">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-16 h-16 border-4 border-[#0066ff] border-t-transparent rounded-full mx-auto mb-6"
+      />
+      <h2 className="text-2xl font-bold text-[#333333] mb-2">Analyzing Skin Integrity...</h2>
+      <p className="text-[#666666]">Processing your scan</p>
+    </div>
   );
 }
