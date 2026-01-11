@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import WaitlistForm from './components/WaitlistForm';
+import SystemStatusTicker from './components/SystemStatusTicker';
 import { Camera, Scissors, Bandage, FileText, ShieldCheck } from 'lucide-react';
 
 export default function Home() {
@@ -131,18 +132,14 @@ function HeroSection({ onSubmit, waitlistSubmitted }: { onSubmit: (email: string
       </div>
         </motion.div>
 
-        {/* Live Status Ticker */}
+        {/* System Status Ticker */}
       <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-8 pt-6 border-t border-slate-200"
+          className="mt-12"
         >
-          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-slate-500">
-            <span>[LAB_STATUS: BATCH_001_PREP]</span>
-            <span>[LAUNCH_WINDOW: 14_FEB_2025]</span>
-            <span>[SPOTS_REMAINING: 14]</span>
-              </div>
+          <SystemStatusTicker />
             </motion.div>
       </div>
     </section>
