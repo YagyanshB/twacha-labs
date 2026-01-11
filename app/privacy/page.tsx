@@ -193,7 +193,7 @@ export default function PrivacyPage() {
             <ul className="space-y-3 text-[#52525B]">
               <li className="flex items-start gap-3">
                 <span className="text-indigo-600 mt-1">✓</span>
-                <span><strong>Encryption:</strong> All data is encrypted in transit (TLS) and at rest</strong></span>
+                <span><strong>Encryption:</strong> All data is encrypted in transit (TLS) and at rest</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-indigo-600 mt-1">✓</span>
