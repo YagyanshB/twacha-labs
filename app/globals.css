@@ -860,10 +860,10 @@ footer {
   padding: 2rem;
 }
 
-/* Consent Step */
+/* Consent Step - Stripe-level Minimalist */
 .consent-step {
   width: 100%;
-  max-width: 700px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
@@ -871,42 +871,198 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  padding: 0 1rem;
 }
 
-.consent-info {
+.consent-info-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: var(--white);
+  border: 1px solid rgb(241 245 249);
+  border-radius: 8px;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(51 65 85);
+}
+
+.info-label {
+  font-weight: 500;
+  color: rgb(15 23 42);
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.info-value {
+  color: rgb(71 85 105);
+  flex: 1;
 }
 
 .consent-checkboxes {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
-.consent-checkboxes label {
+.consent-checkbox-label {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  padding: 1rem;
-  background: var(--white);
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
-.consent-checkboxes label:hover {
-  border-color: rgba(0, 0, 0, 0.2);
-  background: rgba(0, 0, 0, 0.02);
+.consent-checkbox-label:hover {
+  opacity: 0.8;
+}
+
+.consent-checkbox-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.consent-checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.consent-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid rgb(203 213 225);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  background: var(--white);
+}
+
+.consent-checkbox.checked {
+  background: rgb(15 23 42);
+  border-color: rgb(15 23 42);
+}
+
+.consent-checkbox-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.consent-checkbox-main {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(15 23 42);
+  font-weight: 400;
+}
+
+.consent-checkbox-footnote {
+  font-size: 10px;
+  line-height: 1.4;
+  color: rgb(148 163 184);
+  font-weight: 400;
+}
+
+.consent-link {
+  color: rgb(15 23 42);
+  text-decoration: underline;
+  text-decoration-color: rgb(203 213 225);
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.2s ease;
+}
+
+.consent-link:hover {
+  text-decoration-color: rgb(15 23 42);
 }
 
 .consent-actions {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   width: 100%;
+  margin-top: 0.5rem;
+}
+
+.consent-button-primary {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: rgb(15 23 42);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.consent-button-primary:hover:not(.disabled) {
+  background: rgb(30 41 59);
+}
+
+.consent-button-primary.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.consent-button-secondary {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: transparent;
+  color: rgb(71 85 105);
+  border: 1px solid rgb(226 232 240);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.consent-button-secondary:hover {
+  background: rgb(248 250 252);
+  border-color: rgb(203 213 225);
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .consent-step-content {
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .consent-info-list {
+    padding: 1.25rem;
+  }
+
+  .info-row {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .info-label {
+    min-width: auto;
+  }
+
+  .funnel-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .funnel-header p {
+    font-size: 0.9375rem;
+  }
 }
 
 .camera-funnel-content {
