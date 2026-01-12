@@ -1487,20 +1487,6 @@ footer {
   }
 }
 
-/* Marquee Animation for Mobile Status Ticker */
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 30s linear infinite;
-}
-
 .loading-content h1 {
   font-size: clamp(2rem, 6vw, 3rem);
   font-weight: 600;
