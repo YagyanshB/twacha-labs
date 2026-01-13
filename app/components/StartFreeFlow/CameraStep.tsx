@@ -149,7 +149,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
     return averageBrightness >= 40 && averageBrightness <= 200;
   }, []);
 
-  // Face detection and validation
+  // Face detection and validation - Improved for real-time detection
   const validateFrame = useCallback(async () => {
     if (typeof window === 'undefined' || !webcamRef.current || !modelRef.current) {
       return;
@@ -164,7 +164,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       // Check lighting first (no model needed)
       const lightingGood = checkLighting(video);
       
-      // Run face detection
+      // Run face detection with returnTensors: false for better performance
       const predictions = await modelRef.current.estimateFaces(video, false);
       
       if (predictions.length === 0) {
@@ -191,19 +191,19 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       const videoWidth = video.videoWidth;
       const videoHeight = video.videoHeight;
       
-      // Centered check: face center within 20% of viewport center
+      // Centered check: face center within 30% of viewport center (more lenient)
       const centerX = videoWidth / 2;
       const centerY = videoHeight / 2;
-      const toleranceX = videoWidth * 0.2;
-      const toleranceY = videoHeight * 0.2;
+      const toleranceX = videoWidth * 0.3;
+      const toleranceY = videoHeight * 0.3;
       
       const isCentered = 
         Math.abs(faceCenterX - centerX) < toleranceX &&
         Math.abs(faceCenterY - centerY) < toleranceY;
       
-      // Distance check: face width should be 50-70% of canvas width
+      // Distance check: face width should be 40-75% of canvas width (more lenient)
       const faceWidthPercent = (faceWidth / videoWidth) * 100;
-      const correctDistance = faceWidthPercent >= 50 && faceWidthPercent <= 70;
+      const correctDistance = faceWidthPercent >= 40 && faceWidthPercent <= 75;
       
       // Determine status message
       let statusMessage = 'All conditions met!';
@@ -294,7 +294,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
     };
   }, [mode]);
 
-  // Start validation loop when camera is ready
+  // Start validation loop when camera is ready - Run more frequently for real-time detection
   useEffect(() => {
     if (typeof window === 'undefined' || mode !== 'camera' || !modelRef.current) {
       return;
@@ -307,10 +307,10 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
 
     const startValidation = () => {
       if (video.readyState === 4) {
-        // Run validation every 500ms
+        // Run validation every 200ms for real-time feedback
         validationIntervalRef.current = setInterval(() => {
           validateFrame();
-        }, 500);
+        }, 200);
       } else {
         video.addEventListener('loadedmetadata', startValidation, { once: true });
       }
@@ -383,6 +383,22 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           </button>
         </div>
 
+        {/* Upload Button - Always visible when in camera mode */}
+        {mode === 'camera' && !capturedImage && (
+          <div className="mb-4 flex justify-center">
+            <button
+              onClick={() => {
+                setMode('upload');
+                handleRetake();
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-full hover:border-gray-400"
+            >
+              <Upload className="w-4 h-4" />
+              Upload photo instead
+            </button>
+          </div>
+        )}
+
         {/* Camera View or Upload Area */}
         <div className="camera-view">
           {mode === 'camera' ? (
@@ -425,30 +441,43 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           ) : (
             <>
               {!previewImage ? (
-                <div
-                  ref={dropZoneRef}
-                  className={`upload-zone ${isDragging ? 'dragging' : ''}`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <div className="upload-zone-content">
-                    <div className="upload-icon-wrapper">
-                      <ImageIcon className="upload-icon" />
+                <>
+                  <div
+                    ref={dropZoneRef}
+                    className={`upload-zone ${isDragging ? 'dragging' : ''}`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <div className="upload-zone-content">
+                      <div className="upload-icon-wrapper">
+                        <ImageIcon className="upload-icon" />
+                      </div>
+                      <h3 className="upload-title">Drop your photo here</h3>
+                      <p className="upload-subtitle">or click to browse</p>
+                      <p className="upload-hint">Supports JPG, PNG, and WebP</p>
                     </div>
-                    <h3 className="upload-title">Drop your photo here</h3>
-                    <p className="upload-subtitle">or click to browse</p>
-                    <p className="upload-hint">Supports JPG, PNG, and WebP</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </div>
+                  {/* Prominent Upload Button Below Drop Zone */}
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="primary-cta camera-button flex items-center gap-2"
+                    >
+                      <Upload className="button-icon" />
+                      Choose photo from device
+                    </button>
+                  </div>
+                </>
               ) : (
                 <div className="upload-preview">
                   <img src={previewImage} alt="Preview" className="captured-image" />
