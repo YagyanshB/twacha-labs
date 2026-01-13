@@ -66,7 +66,8 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
   };
 
   const handleCapture = async () => {
-    if (webcamRef.current && allConditionsMet) {
+    if (webcamRef.current) {
+      // Allow capture even if conditions not met (for testing/fallback)
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
         setCapturedImage(imageSrc);
@@ -151,7 +152,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
 
   // Face detection and validation - Improved for real-time detection
   const validateFrame = useCallback(async () => {
-    if (typeof window === 'undefined' || !webcamRef.current || !modelRef.current) {
+    if (typeof window === 'undefined' || !webcamRef.current) {
       return;
     }
 
@@ -160,10 +161,23 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       return;
     }
 
+    // Check lighting first (no model needed)
+    const lightingGood = checkLighting(video);
+
+    // If model not loaded yet, just check lighting
+    if (!modelRef.current) {
+      setValidation(prev => ({
+        ...prev,
+        faceDetected: false,
+        centered: false,
+        correctDistance: false,
+        goodLighting: lightingGood,
+        statusMessage: 'Loading face detection...',
+      }));
+      return;
+    }
+
     try {
-      // Check lighting first (no model needed)
-      const lightingGood = checkLighting(video);
-      
       // Run face detection with returnTensors: false for better performance
       const predictions = await modelRef.current.estimateFaces(video, false);
       
@@ -191,19 +205,19 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       const videoWidth = video.videoWidth;
       const videoHeight = video.videoHeight;
       
-      // Centered check: face center within 30% of viewport center (more lenient)
+      // Centered check: face center within 35% of viewport center (very lenient)
       const centerX = videoWidth / 2;
       const centerY = videoHeight / 2;
-      const toleranceX = videoWidth * 0.3;
-      const toleranceY = videoHeight * 0.3;
+      const toleranceX = videoWidth * 0.35;
+      const toleranceY = videoHeight * 0.35;
       
       const isCentered = 
         Math.abs(faceCenterX - centerX) < toleranceX &&
         Math.abs(faceCenterY - centerY) < toleranceY;
       
-      // Distance check: face width should be 40-75% of canvas width (more lenient)
+      // Distance check: face width should be 35-80% of canvas width (very lenient for better UX)
       const faceWidthPercent = (faceWidth / videoWidth) * 100;
-      const correctDistance = faceWidthPercent >= 40 && faceWidthPercent <= 75;
+      const correctDistance = faceWidthPercent >= 35 && faceWidthPercent <= 80;
       
       // Determine status message
       let statusMessage = 'All conditions met!';
@@ -226,7 +240,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       } else if (!isCentered) {
         statusMessage = 'Center your face in the frame';
       } else if (!correctDistance) {
-        statusMessage = faceWidthPercent < 50 
+        statusMessage = faceWidthPercent < 35 
           ? 'Move closer to the camera' 
           : 'Move further from the camera';
       }
@@ -269,6 +283,10 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
             ...prev,
             statusMessage: 'Camera ready - Position your face',
           }));
+          // Trigger validation immediately after model loads
+          if (webcamRef.current?.video && webcamRef.current.video.readyState === 4) {
+            setTimeout(() => validateFrame(), 100);
+          }
         }
       } catch (error) {
         console.error('Error loading BlazeFace model:', error);
@@ -296,7 +314,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
 
   // Start validation loop when camera is ready - Run more frequently for real-time detection
   useEffect(() => {
-    if (typeof window === 'undefined' || mode !== 'camera' || !modelRef.current) {
+    if (typeof window === 'undefined' || mode !== 'camera') {
       return;
     }
 
@@ -306,21 +324,77 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
     }
 
     const startValidation = () => {
-      if (video.readyState === 4) {
-        // Run validation every 200ms for real-time feedback
-        validationIntervalRef.current = setInterval(() => {
-          validateFrame();
-        }, 200);
-      } else {
-        video.addEventListener('loadedmetadata', startValidation, { once: true });
-      }
+      // Wait for model to load
+      const checkModel = () => {
+        if (!modelRef.current) {
+          // Retry after 100ms if model not loaded yet (max 30 attempts = 3 seconds)
+          let attempts = 0;
+          const retryCheck = () => {
+            attempts++;
+            if (modelRef.current) {
+              if (video.readyState === 4) {
+                // Run validation every 150ms for real-time feedback
+                validationIntervalRef.current = setInterval(() => {
+                  if (modelRef.current && video.readyState === 4) {
+                    validateFrame();
+                  }
+                }, 150);
+              } else {
+                video.addEventListener('loadedmetadata', () => {
+                  validationIntervalRef.current = setInterval(() => {
+                    if (modelRef.current && video.readyState === 4) {
+                      validateFrame();
+                    }
+                  }, 150);
+                }, { once: true });
+              }
+            } else if (attempts < 30) {
+              setTimeout(retryCheck, 100);
+            } else {
+              // Model failed to load - allow manual capture anyway
+              setValidation(prev => ({
+                ...prev,
+                statusMessage: 'Face detection unavailable - You can still capture',
+              }));
+            }
+          };
+          setTimeout(retryCheck, 100);
+          return;
+        }
+
+        if (video.readyState === 4) {
+          // Run validation every 150ms for real-time feedback
+          validationIntervalRef.current = setInterval(() => {
+            if (modelRef.current && video.readyState === 4) {
+              validateFrame();
+            }
+          }, 150);
+        } else {
+          video.addEventListener('loadedmetadata', () => {
+            validationIntervalRef.current = setInterval(() => {
+              if (modelRef.current && video.readyState === 4) {
+                validateFrame();
+              }
+            }, 150);
+          }, { once: true });
+        }
+      };
+
+      checkModel();
     };
 
-    startValidation();
+    // Wait for video to be ready
+    if (video.readyState >= 2) {
+      startValidation();
+    } else {
+      video.addEventListener('loadedmetadata', startValidation, { once: true });
+      video.addEventListener('canplay', startValidation, { once: true });
+    }
 
     return () => {
       if (validationIntervalRef.current) {
         clearInterval(validationIntervalRef.current);
+        validationIntervalRef.current = null;
       }
     };
   }, [mode, validateFrame]);
@@ -385,15 +459,16 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
 
         {/* Upload Button - Always visible when in camera mode */}
         {mode === 'camera' && !capturedImage && (
-          <div className="mb-4 flex justify-center">
+          <div className="mb-6 flex justify-center">
             <button
               onClick={() => {
                 setMode('upload');
                 handleRetake();
               }}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-full hover:border-gray-400"
+              className="flex items-center gap-2 px-6 py-3 text-base text-gray-700 hover:text-gray-900 transition-colors border-2 border-gray-300 rounded-full hover:border-gray-400 bg-white font-medium"
+              type="button"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="w-5 h-5" />
               Upload photo instead
             </button>
           </div>
@@ -528,28 +603,46 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           {mode === 'camera' ? (
             <>
               {!capturedImage ? (
-                <button
-                  onClick={handleCapture}
-                  disabled={!allConditionsMet || isUploading}
-                  className={`primary-cta camera-button ${!allConditionsMet || isUploading ? 'disabled' : ''}`}
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="button-icon animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="button-icon" />
-                      Capture photo
-                    </>
-                  )}
-                </button>
+                <>
+                  <button
+                    onClick={handleCapture}
+                    disabled={isUploading}
+                    className={`primary-cta camera-button ${!allConditionsMet ? 'opacity-60' : ''} ${isUploading ? 'disabled' : ''}`}
+                    type="button"
+                    title={!allConditionsMet ? 'Position your face properly for best results' : 'Ready to capture'}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="button-icon animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="button-icon" />
+                        Capture photo
+                      </>
+                    )}
+                  </button>
+                  {/* Upload option always visible */}
+                  <button
+                    onClick={() => {
+                      setMode('upload');
+                      handleRetake();
+                    }}
+                    disabled={isUploading}
+                    className="secondary-cta camera-button mt-3"
+                    type="button"
+                  >
+                    <Upload className="button-icon" />
+                    Upload instead
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={handleRetake}
                   disabled={isUploading}
                   className="secondary-cta camera-button"
+                  type="button"
                 >
                   Retake photo
                 </button>
@@ -558,19 +651,36 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           ) : (
             <>
               {!previewImage ? (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="primary-cta camera-button"
-                >
-                  <Upload className="button-icon" />
-                  Choose photo
-                </button>
+                <>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="primary-cta camera-button"
+                    type="button"
+                  >
+                    <Upload className="button-icon" />
+                    Choose photo
+                  </button>
+                  {/* Camera option always visible */}
+                  <button
+                    onClick={() => {
+                      setMode('camera');
+                      handleRetake();
+                    }}
+                    disabled={isUploading}
+                    className="secondary-cta camera-button mt-3"
+                    type="button"
+                  >
+                    <Camera className="button-icon" />
+                    Use camera instead
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={handleRetake}
                   disabled={isUploading}
                   className="secondary-cta camera-button"
+                  type="button"
                 >
                   Choose different photo
                 </button>
