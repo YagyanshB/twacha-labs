@@ -61,7 +61,7 @@ export default function LoginPage() {
             
             <Link
               href="/"
-              className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-light"
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               ← Back to home
             </Link>
@@ -72,24 +72,26 @@ export default function LoginPage() {
       {/* Main Content - Split Screen Layout */}
       <div className="flex-1 flex">
         {/* Left Panel - Branding/Gradient */}
-        <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
           {/* Subtle pattern overlay */}
-          <div className="absolute inset-0 opacity-5" style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
-          }}></div>
+          <div 
+            className="absolute inset-0 opacity-5"
+            style={{
+              backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+              backgroundSize: '40px 40px'
+            }}
+          />
           
-          <div className="relative z-10 flex flex-col justify-center items-center w-full px-12 text-white">
-            <div className="max-w-md text-center">
-              <div className="mb-8">
-                <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 mx-auto border border-white/20">
-                  <div className="w-8 h-8 bg-white rounded-sm"></div>
-                </div>
+          {/* Centered content */}
+          <div className="relative z-10 flex items-center justify-center w-full h-full px-12">
+            <div className="max-w-sm text-center">
+              <div className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center mb-8 mx-auto border border-white/20">
+                <div className="w-7 h-7 bg-white rounded-sm"></div>
               </div>
-              <h2 className="text-3xl font-light tracking-tight mb-4">
+              <h2 className="text-2xl font-light tracking-tight text-white mb-4">
                 Welcome back
               </h2>
-              <p className="text-gray-300 font-light leading-relaxed text-lg">
+              <p className="text-gray-400 font-light leading-relaxed">
                 Sign in to continue your skin health journey with AI-powered analysis and personalized recommendations.
               </p>
             </div>
@@ -97,8 +99,8 @@ export default function LoginPage() {
         </div>
 
         {/* Right Panel - Login Form */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-          <div className="w-full max-w-md">
+        <div className="flex-1 lg:w-1/2 flex items-center justify-center p-6 sm:p-8 lg:p-12">
+          <div className="w-full max-w-sm">
             {/* Mobile Branding */}
             <div className="lg:hidden mb-8 text-center">
               <Link href="/" className="inline-flex items-center space-x-2 mb-6">
@@ -108,53 +110,51 @@ export default function LoginPage() {
             </div>
 
             {/* Form Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 lg:p-10">
-              <div className="mb-8">
-                <h1 className="text-3xl lg:text-4xl font-light tracking-tight text-gray-900 mb-3">
+            <div className="bg-white rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-200 p-8">
+              <div className="mb-6">
+                <h1 className="text-2xl font-semibold tracking-tight text-gray-900 mb-2">
                   Sign in
                 </h1>
-                <p className="text-gray-500 font-light text-sm leading-relaxed">
+                <p className="text-gray-500 text-sm">
                   Enter your email to receive a magic link. No password required.
                 </p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-5">
+              <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label 
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
                   >
                     Email address
                   </label>
-                  <div className="relative">
-                    <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      required
-                      disabled={loading}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-300"
-                    />
-                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    disabled={loading}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:border-gray-400"
+                  />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-black text-white py-3.5 rounded-lg font-medium hover:bg-gray-900 active:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center group shadow-sm hover:shadow-md"
+                  className="w-full bg-gray-900 text-white py-3 rounded-lg font-medium hover:bg-black active:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center group"
                 >
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                      <span>Sending magic link...</span>
+                      <span>Sending...</span>
                     </>
                   ) : (
                     <>
                       <Mail className="w-4 h-4 mr-2" />
                       <span>Send magic link</span>
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </>
                   )}
                 </button>
@@ -162,20 +162,20 @@ export default function LoginPage() {
 
               {message && (
                 <div
-                  className={`mt-6 p-4 rounded-lg flex items-start space-x-3 animate-in fade-in slide-in-from-top-2 ${
+                  className={`mt-4 p-3 rounded-lg flex items-start space-x-2 ${
                     message.type === 'success'
                       ? 'bg-green-50 border border-green-200'
                       : 'bg-red-50 border border-red-200'
                   }`}
                 >
                   {message.type === 'success' ? (
-                    <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
                   ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
                   )}
                   <p
-                    className={`text-sm font-light ${
-                      message.type === 'success' ? 'text-green-900' : 'text-red-900'
+                    className={`text-sm ${
+                      message.type === 'success' ? 'text-green-800' : 'text-red-800'
                     }`}
                   >
                     {message.text}
@@ -183,12 +183,12 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <p className="text-xs text-gray-500 leading-relaxed text-center font-light">
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                <p className="text-xs text-gray-500 text-center leading-relaxed">
                   By signing in, you agree to our{' '}
                   <Link 
                     href="/privacy" 
-                    className="underline hover:text-gray-900 transition-colors"
+                    className="text-gray-700 hover:text-gray-900 underline underline-offset-2"
                   >
                     Privacy Policy
                   </Link>
