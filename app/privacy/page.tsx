@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white">
@@ -7,21 +9,21 @@ export default function PrivacyPage() {
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <a href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <div className="w-6 h-6 bg-black rounded"></div>
               <span className="text-base font-medium tracking-tight">Twacha Labs</span>
-            </a>
+            </Link>
             
             <div className="hidden md:flex items-center space-x-8 text-sm">
-              <a href="/" className="text-gray-600 hover:text-black transition-colors">
+              <Link href="/" className="text-gray-600 hover:text-black transition-colors">
                 Home
-              </a>
-              <a href="/pricing" className="text-gray-600 hover:text-black transition-colors">
+              </Link>
+              <Link href="/pricing" className="text-gray-600 hover:text-black transition-colors">
                 Pricing
-              </a>
-              <a href="/privacy" className="text-black font-medium">
+              </Link>
+              <Link href="/privacy" className="text-black font-medium">
                 Privacy
-              </a>
+              </Link>
             </div>
 
             <button className="md:hidden text-gray-600">
@@ -33,62 +35,90 @@ export default function PrivacyPage() {
         </div>
       </nav>
 
-      {/* Hero Section - Same style as landing */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* Hero Section - Minimal, centered */}
+      <section className="pt-40 pb-24 px-6">
+        <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-light tracking-tight leading-[0.95] mb-6">
             Privacy Policy
           </h1>
-          <p className="text-xl text-gray-500 font-light">
+          <p className="text-xl text-gray-500 font-light mb-2">
             How we collect, use, and protect your data
           </p>
-          <p className="text-sm text-gray-400 mt-4">Last updated: January 2026</p>
+          <p className="text-sm text-gray-400">Last updated: January 2026</p>
         </div>
       </section>
 
-      {/* Data Controller */}
-      <section className="py-16 px-6 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-12">
-            <h2 className="text-3xl sm:text-4xl font-light mb-4">Data Controller</h2>
-            <p className="text-gray-600 font-light leading-relaxed">
-              Twacha Labs is the data controller responsible for processing your personal data.
+      {/* How We Protect Your Data - Prominent section */}
+      <section className="py-24 px-6 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-4xl sm:text-5xl font-light tracking-tight mb-8 text-center">
+            How we protect your data
+          </h2>
+          <div className="space-y-6 text-center">
+            <p className="text-lg text-gray-600 font-light leading-relaxed">
+              Your privacy is fundamental to everything we do. We implement industry-leading security measures to ensure your biometric data remains protected.
             </p>
+            <div className="pt-8 space-y-4 max-w-2xl mx-auto">
+              <div className="flex items-start justify-center space-x-3">
+                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
+                <p className="text-gray-600 font-light text-left">
+                  <span className="font-medium">Encryption:</span> All data encrypted in transit (TLS) and at rest
+                </p>
+              </div>
+              <div className="flex items-start justify-center space-x-3">
+                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
+                <p className="text-gray-600 font-light text-left">
+                  <span className="font-medium">Access Controls:</span> Strict authentication and authorization for all systems
+                </p>
+              </div>
+              <div className="flex items-start justify-center space-x-3">
+                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
+                <p className="text-gray-600 font-light text-left">
+                  <span className="font-medium">GDPR Compliant:</span> Full compliance with European data protection regulations
+                </p>
+              </div>
+              <div className="flex items-start justify-center space-x-3">
+                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
+                <p className="text-gray-600 font-light text-left">
+                  <span className="font-medium">Data Minimization:</span> We only collect data necessary for providing the service
+                </p>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="grid sm:grid-cols-2 gap-8">
+      {/* Data Controller - Simplified */}
+      <section className="py-24 px-6 bg-gray-50 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-light mb-6">Data Controller</h2>
+          <p className="text-gray-600 font-light leading-relaxed mb-8">
+            Twacha Labs is the data controller responsible for processing your personal data.
+          </p>
+          <div className="space-y-4">
             <div>
-              <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Company Name</div>
+              <div className="text-xs uppercase tracking-widest text-gray-400 mb-1">Company Name</div>
               <p className="text-gray-900">Twacha Labs</p>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Legal Entity</div>
-              <p className="text-gray-900">[Insert legal entity name]</p>
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Registered Address</div>
-              <p className="text-gray-900">[Insert registered address]</p>
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Contact Email</div>
-              <p className="text-gray-900">privacy@twachalabs.com</p>
+              <div className="text-xs uppercase tracking-widest text-gray-400 mb-1">Contact Email</div>
+              <a href="mailto:privacy@twachalabs.com" className="text-gray-900 hover:opacity-70 transition-opacity">
+                privacy@twachalabs.com
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Special Category Data */}
-      <section className="py-16 px-6 bg-gray-50 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-12">
-            <h2 className="text-3xl sm:text-4xl font-light mb-4">Biometric Data Processing</h2>
-            <p className="text-gray-600 font-light leading-relaxed">
-              Under GDPR Article 9, facial images are classified as special category data. 
-              We only process this data with your explicit consent.
-            </p>
-          </div>
-
-          <div className="space-y-8">
+      {/* Biometric Data Processing - Simplified */}
+      <section className="py-24 px-6 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-light mb-6">Biometric Data Processing</h2>
+          <p className="text-gray-600 font-light leading-relaxed mb-8">
+            Under GDPR Article 9, facial images are classified as special category data. 
+            We only process this data with your explicit consent.
+          </p>
+          <div className="space-y-6">
             <div>
               <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Legal Basis</div>
               <p className="text-gray-900 font-light">Explicit consent (GDPR Article 9(2)(a))</p>
@@ -109,60 +139,51 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      {/* Your Rights */}
-      <section className="py-16 px-6 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-12">
-            <h2 className="text-3xl sm:text-4xl font-light mb-4">Your Rights</h2>
-            <p className="text-gray-600 font-light leading-relaxed">
-              Under GDPR, you have the following rights regarding your personal data.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-8">
-            <div className="border-l-2 border-gray-200 pl-6">
-              <h3 className="font-medium mb-2">Right of Access</h3>
-              <p className="text-sm text-gray-600 font-light leading-relaxed">
+      {/* Your Rights - Simplified grid */}
+      <section className="py-24 px-6 bg-gray-50 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-light mb-6">Your Rights</h2>
+          <p className="text-gray-600 font-light leading-relaxed mb-12">
+            Under GDPR, you have the following rights regarding your personal data.
+          </p>
+          <div className="space-y-8">
+            <div>
+              <h3 className="font-medium mb-2 text-lg">Right of Access</h3>
+              <p className="text-gray-600 font-light leading-relaxed">
                 You can request a copy of all personal data we hold about you.
               </p>
             </div>
-
-            <div className="border-l-2 border-gray-200 pl-6">
-              <h3 className="font-medium mb-2">Right to Rectification</h3>
-              <p className="text-sm text-gray-600 font-light leading-relaxed">
+            <div>
+              <h3 className="font-medium mb-2 text-lg">Right to Rectification</h3>
+              <p className="text-gray-600 font-light leading-relaxed">
                 You can request correction of inaccurate or incomplete data.
               </p>
             </div>
-
-            <div className="border-l-2 border-gray-200 pl-6">
-              <h3 className="font-medium mb-2">Right to Erasure</h3>
-              <p className="text-sm text-gray-600 font-light leading-relaxed">
+            <div>
+              <h3 className="font-medium mb-2 text-lg">Right to Erasure</h3>
+              <p className="text-gray-600 font-light leading-relaxed">
                 You can request deletion of your data ("Right to be Forgotten").
               </p>
             </div>
-
-            <div className="border-l-2 border-gray-200 pl-6">
-              <h3 className="font-medium mb-2">Right to Restrict Processing</h3>
-              <p className="text-sm text-gray-600 font-light leading-relaxed">
+            <div>
+              <h3 className="font-medium mb-2 text-lg">Right to Restrict Processing</h3>
+              <p className="text-gray-600 font-light leading-relaxed">
                 You can request that we limit how we use your data.
               </p>
             </div>
-
-            <div className="border-l-2 border-gray-200 pl-6">
-              <h3 className="font-medium mb-2">Right to Data Portability</h3>
-              <p className="text-sm text-gray-600 font-light leading-relaxed">
+            <div>
+              <h3 className="font-medium mb-2 text-lg">Right to Data Portability</h3>
+              <p className="text-gray-600 font-light leading-relaxed">
                 You can request your data in a machine-readable format.
               </p>
             </div>
-
-            <div className="border-l-2 border-gray-200 pl-6">
-              <h3 className="font-medium mb-2">Right to Object</h3>
-              <p className="text-sm text-gray-600 font-light leading-relaxed">
+            <div>
+              <h3 className="font-medium mb-2 text-lg">Right to Object</h3>
+              <p className="text-gray-600 font-light leading-relaxed">
                 You can object to processing based on legitimate interests.
               </p>
             </div>
           </div>
-
           <div className="mt-12 pt-8 border-t border-gray-200">
             <p className="text-sm text-gray-600 font-light">
               To exercise these rights, contact us at privacy@twachalabs.com. 
@@ -172,60 +193,14 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      {/* Data Security */}
-      <section className="py-16 px-6 bg-gray-50 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-12">
-            <h2 className="text-3xl sm:text-4xl font-light mb-4">Data Security</h2>
-            <p className="text-gray-600 font-light leading-relaxed">
-              We implement technical and organizational measures to protect your data.
-            </p>
-          </div>
-
+      {/* ML Research - Simplified */}
+      <section className="py-24 px-6 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-light mb-6">ML Research Data Usage</h2>
+          <p className="text-gray-600 font-light leading-relaxed mb-8">
+            With your consent, anonymized data may be used to improve our AI models.
+          </p>
           <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="w-1.5 h-1.5 bg-black rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <span className="font-medium">Encryption: </span>
-                <span className="text-gray-600 font-light">All data is encrypted in transit (TLS) and at rest</span>
-              </div>
-            </div>
-            <div className="flex items-start space-x-4">
-              <div className="w-1.5 h-1.5 bg-black rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <span className="font-medium">Access Controls: </span>
-                <span className="text-gray-600 font-light">Strict access controls and authentication for all systems</span>
-              </div>
-            </div>
-            <div className="flex items-start space-x-4">
-              <div className="w-1.5 h-1.5 bg-black rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <span className="font-medium">Infrastructure: </span>
-                <span className="text-gray-600 font-light">GDPR-compliant cloud infrastructure with regular security audits</span>
-              </div>
-            </div>
-            <div className="flex items-start space-x-4">
-              <div className="w-1.5 h-1.5 bg-black rounded-full mt-2 flex-shrink-0"></div>
-              <div>
-                <span className="font-medium">Data Minimization: </span>
-                <span className="text-gray-600 font-light">We only collect data necessary for providing the service</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ML Research */}
-      <section className="py-16 px-6 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-12">
-            <h2 className="text-3xl sm:text-4xl font-light mb-4">ML Research Data Usage</h2>
-            <p className="text-gray-600 font-light leading-relaxed">
-              With your consent, anonymized data may be used to improve our AI models.
-            </p>
-          </div>
-
-          <div className="space-y-8">
             <div>
               <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Anonymization</div>
               <p className="text-gray-900 font-light leading-relaxed">
@@ -240,39 +215,23 @@ export default function PrivacyPage() {
                 Withdrawal of consent does not affect data already used in model training.
               </p>
             </div>
-            <div>
-              <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Research Partners</div>
-              <p className="text-gray-900 font-light leading-relaxed">
-                Anonymized data may be shared with clinical research institutions 
-                under strict data processing agreements.
-              </p>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Contact */}
-      <section className="py-16 px-6 bg-gray-50 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* Contact - Centered, minimal */}
+      <section className="py-24 px-6 bg-gray-50 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-light mb-4">Questions or Concerns?</h2>
-          <p className="text-gray-600 font-light leading-relaxed mb-8 max-w-2xl mx-auto">
+          <p className="text-gray-600 font-light leading-relaxed mb-8">
             If you have questions about this privacy policy or wish to exercise your rights, 
             please contact us.
           </p>
-          
-          <div className="inline-block text-left">
-            <div className="mb-4">
-              <div className="text-xs uppercase tracking-widest text-gray-400 mb-1">Email</div>
-              <a href="mailto:privacy@twachalabs.com" className="text-black hover:opacity-70 transition-opacity">
-                privacy@twachalabs.com
-              </a>
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-widest text-gray-400 mb-1">Subject Line</div>
-              <p className="text-sm text-gray-600 font-light">
-                "GDPR Request - [Your Request Type]"
-              </p>
-            </div>
+          <div>
+            <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">Email</div>
+            <a href="mailto:privacy@twachalabs.com" className="text-black hover:opacity-70 transition-opacity text-lg">
+              privacy@twachalabs.com
+            </a>
           </div>
         </div>
       </section>
@@ -287,9 +246,9 @@ export default function PrivacyPage() {
             </div>
             
             <div className="flex space-x-8 text-sm">
-              <a href="/privacy" className="text-white font-medium">
+              <Link href="/privacy" className="text-white font-medium">
                 Privacy
-              </a>
+              </Link>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
                 Terms
               </a>
