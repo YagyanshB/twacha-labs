@@ -250,7 +250,7 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
             <li><a href="#how" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' }); }}>How it works</a></li>
             <li><a href="/pricing" onClick={(e) => { e.preventDefault(); window.location.href = '/pricing'; }}>Pricing</a></li>
           </ul>
-          <button onClick={onStartScan} className="scan-button">Start free</button>
+          <Link href="/login" className="scan-button">Start free</Link>
         </div>
       </div>
     </nav>
@@ -268,7 +268,7 @@ function HeroSection({ onStartScan }: { onStartScan: () => void }) {
         </h1>
         <p>AI-powered analysis designed specifically for men's skin. No BS, just results.</p>
         <div className="hero-cta">
-          <button onClick={onStartScan} className="primary-cta">Start free scan</button>
+          <Link href="/login" className="primary-cta">Start free scan</Link>
           <a href="#report" className="secondary-cta" onClick={(e) => { e.preventDefault(); document.getElementById('report')?.scrollIntoView({ behavior: 'smooth' }); }}>
             View sample report
             <span>→</span>
@@ -287,7 +287,7 @@ function DemoSection({ onStartScan }: { onStartScan: () => void }) {
         <div className="demo-content">
           <h2>Scan. Analyse. Improve.</h2>
           <p>One selfie gives you everything you need to know about your skin. Our AI identifies issues you can't see and provides a personalised routine that actually works.</p>
-          <button onClick={onStartScan} className="primary-cta" style={{ background: 'white', color: 'black' }}>Start free analysis</button>
+          <Link href="/login" className="primary-cta" style={{ background: 'white', color: 'black' }}>Start free analysis</Link>
         </div>
         <div className="demo-visual">
           <div className="phone-mockup">
@@ -468,7 +468,7 @@ function ReportPreviewSection({ onStartScan }: { onStartScan: () => void }) {
           </div>
 
           <div className="report-cta">
-            <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
+            <Link href="/login" className="primary-cta">Start free analysis</Link>
           </div>
         </div>
       </div>
@@ -482,7 +482,7 @@ function FinalCTASection({ onStartScan }: { onStartScan: () => void }) {
     <section className="final-cta">
       <h2>Ready to level up your skin?</h2>
       <p>Join thousands of men taking control of their skin health. Free analysis, no commitment.</p>
-      <button onClick={onStartScan} className="primary-cta">Start free analysis</button>
+      <Link href="/login" className="primary-cta">Start free analysis</Link>
     </section>
   );
 }
@@ -499,14 +499,7 @@ function Footer() {
           <a href="#">Contact</a>
         </div>
       </div>
-      <div className="mt-4 text-center">
-        <Link 
-          href="/privacy" 
-          className="text-sm text-gray-500 hover:text-gray-700 underline"
-        >
-          How we protect your data
-        </Link>
-      </div>
+      <div className="mt-4 text-center"></div>
     </footer>
   );
 }
