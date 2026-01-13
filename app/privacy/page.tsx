@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Shield, Lock } from 'lucide-react'
 
 export default function PrivacyPage() {
   return (
@@ -48,40 +49,60 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      {/* How We Protect Your Data - Prominent section */}
+      {/* How We Protect Your Data - Trust Signals (matching pricing page design) */}
       <section className="py-24 px-6 border-t border-gray-200">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl sm:text-5xl font-light tracking-tight mb-8 text-center">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl sm:text-5xl font-light tracking-tight mb-12 text-center">
             How we protect your data
           </h2>
-          <div className="space-y-6 text-center">
-            <p className="text-lg text-gray-600 font-light leading-relaxed">
-              Your privacy is fundamental to everything we do. We implement industry-leading security measures to ensure your biometric data remains protected.
-            </p>
-            <div className="pt-8 space-y-4 max-w-2xl mx-auto">
-              <div className="flex items-start justify-center space-x-3">
-                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
-                <p className="text-gray-600 font-light text-left">
-                  <span className="font-medium">Encryption:</span> All data encrypted in transit (TLS) and at rest
-                </p>
+          <p className="text-lg text-gray-600 font-light leading-relaxed text-center mb-16 max-w-2xl mx-auto">
+            Your privacy is fundamental to everything we do. We implement industry-leading security measures to ensure your biometric data remains protected.
+          </p>
+          
+          {/* Trust Signals Grid - Same design as pricing page */}
+          <div className="grid md:grid-cols-2 gap-12 max-w-3xl mx-auto mb-16">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-gray-600" />
               </div>
-              <div className="flex items-start justify-center space-x-3">
-                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
-                <p className="text-gray-600 font-light text-left">
-                  <span className="font-medium">Access Controls:</span> Strict authentication and authorization for all systems
-                </p>
+              <h3 className="font-medium mb-2">Clinical-Grade Encryption</h3>
+              <p className="text-sm text-gray-600 font-light">
+                All biometric data encrypted at rest and in transit using industry-leading protocols
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-8 h-8 text-gray-600" />
               </div>
-              <div className="flex items-start justify-center space-x-3">
-                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
-                <p className="text-gray-600 font-light text-left">
-                  <span className="font-medium">GDPR Compliant:</span> Full compliance with European data protection regulations
-                </p>
+              <h3 className="font-medium mb-2">Biometric Data Privacy</h3>
+              <p className="text-sm text-gray-600 font-light">
+                GDPR Article 9 compliant. Explicit consent required. No third-party sharing without permission
+              </p>
+            </div>
+          </div>
+
+          {/* Additional Security Details */}
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-1.5 h-1.5 bg-black rounded-full mt-2 flex-shrink-0"></div>
+              <div>
+                <span className="font-medium">Access Controls: </span>
+                <span className="text-gray-600 font-light">Strict authentication and authorization for all systems</span>
               </div>
-              <div className="flex items-start justify-center space-x-3">
-                <div className="w-1 h-1 bg-black rounded-full mt-2 flex-shrink-0"></div>
-                <p className="text-gray-600 font-light text-left">
-                  <span className="font-medium">Data Minimization:</span> We only collect data necessary for providing the service
-                </p>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-1.5 h-1.5 bg-black rounded-full mt-2 flex-shrink-0"></div>
+              <div>
+                <span className="font-medium">Data Minimization: </span>
+                <span className="text-gray-600 font-light">We only collect data necessary for providing the service</span>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-1.5 h-1.5 bg-black rounded-full mt-2 flex-shrink-0"></div>
+              <div>
+                <span className="font-medium">Infrastructure: </span>
+                <span className="text-gray-600 font-light">GDPR-compliant cloud infrastructure with regular security audits</span>
               </div>
             </div>
           </div>
