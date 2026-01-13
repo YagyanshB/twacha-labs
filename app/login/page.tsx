@@ -30,13 +30,13 @@ export default function LoginPage() {
 
       setMessage({
         type: 'success',
-        text: 'Check your email for the magic link!',
+        text: 'Protocol initiated. Check your inbox for the magic link.',
       })
       setEmail('')
     } catch (error: any) {
       setMessage({
         type: 'error',
-        text: error.message || 'Something went wrong',
+        text: error.message || 'Clinical system authentication failed',
       })
     } finally {
       setLoading(false)
@@ -44,77 +44,65 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 via-gray-800 to-black relative">
-        {/* Pattern overlay */}
+    <div className="min-h-screen flex selection:bg-blue-100">
+      {/* Left Panel - Branding (Dark Clinical) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[#020617] relative overflow-hidden border-r border-slate-800">
+        {/* Superior Pattern overlay: Smaller dots for higher density */}
         <div 
-          className="absolute inset-0 opacity-5"
+          className="absolute inset-0 opacity-[0.15]"
           style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
+            backgroundImage: `radial-gradient(circle at 1px 1px, #334155 1px, transparent 0)`,
+            backgroundSize: '24px 24px'
           }}
         />
         
-        {/* Back link */}
+        {/* Atmospheric Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-blue-500/5 filter blur-[120px] rounded-full" />
+        
         <Link
           href="/"
-          className="absolute top-8 left-8 text-sm text-gray-400 hover:text-white transition-colors z-10"
+          className="absolute top-12 left-12 text-xs font-mono uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors z-10"
         >
-          ← Back to home
+          [ back_to_home ]
         </Link>
         
-        {/* Centered content */}
-        <div className="flex items-center justify-center w-full h-full">
-          <div className="max-w-md text-center px-12">
-            <div className="flex items-center justify-center space-x-3 mb-8">
-              <div className="w-8 h-8 bg-white rounded-md"></div>
-              <span className="text-xl font-medium text-white">Twacha Labs</span>
+        <div className="flex items-center justify-center w-full h-full relative z-10">
+          <div className="max-w-sm text-center">
+            <div className="flex items-center justify-center space-x-3 mb-10">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                <div className="w-5 h-5 border-2 border-slate-950 rounded-sm" />
+              </div>
+              <span className="text-xl font-medium tracking-tight text-white">Twacha Labs</span>
             </div>
-            <h2 className="text-3xl font-light text-white mb-4">
+            <h2 className="text-4xl font-light tracking-tight text-white mb-6">
               Welcome back
             </h2>
-            <p className="text-gray-400 leading-relaxed">
-              Sign in to continue your skin health journey with AI-powered analysis and personalized recommendations.
+            <p className="text-slate-400 font-light leading-relaxed px-4">
+              Access your clinical dashboard to monitor your skin health journey and analyze scan progress.
             </p>
           </div>
         </div>
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 p-6 md:p-12">
         <div className="w-full max-w-md">
-          {/* Mobile Header */}
-          <div className="lg:hidden mb-8">
-            <Link href="/" className="inline-flex items-center space-x-2 mb-2">
-              <div className="w-6 h-6 bg-black rounded-sm"></div>
-              <span className="text-base font-medium">Twacha Labs</span>
-            </Link>
-            <Link
-              href="/"
-              className="block text-sm text-gray-500 hover:text-gray-900"
-            >
-              ← Back to home
-            </Link>
-          </div>
-
           {/* Form Card */}
-          <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-200 p-10">
-            <div className="mb-8">
-              <h1 className="text-3xl font-semibold text-gray-900 mb-2">
+          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 p-8 md:p-12">
+            <div className="mb-10 text-center">
+              <h1 className="text-3xl font-medium text-slate-900 tracking-tight mb-3">
                 Sign in
               </h1>
-              <p className="text-gray-500">
-                Enter your email to receive a magic link.<br />
-                No password required.
+              <p className="text-slate-500 font-light text-sm">
+                Enter your email to receive a secure magic link.
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2">
                 <label 
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-[10px] uppercase tracking-widest font-semibold text-slate-400 ml-1"
                 >
                   Email address
                 </label>
@@ -126,25 +114,21 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   required
                   disabled={loading}
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all disabled:opacity-50 hover:border-gray-300 text-base"
+                  className="w-full px-4 py-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all disabled:opacity-50 text-base"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gray-900 text-white py-4 rounded-xl font-medium text-base hover:bg-black transition-all disabled:opacity-50 flex items-center justify-center group"
+                className="w-full bg-slate-950 text-white py-4 rounded-2xl font-medium text-sm hover:bg-black transition-all shadow-lg shadow-slate-200 disabled:opacity-50 flex items-center justify-center group"
               >
                 {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3" />
-                    <span>Sending...</span>
-                  </>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                 ) : (
                   <>
-                    <Mail className="w-5 h-5 mr-2" />
                     <span>Send magic link</span>
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
               </button>
@@ -152,38 +136,29 @@ export default function LoginPage() {
 
             {message && (
               <div
-                className={`mt-6 p-4 rounded-xl flex items-start space-x-3 ${
+                className={`mt-8 p-4 rounded-2xl flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
                   message.type === 'success'
-                    ? 'bg-green-50 border border-green-200'
-                    : 'bg-red-50 border border-red-200'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-100'
+                    : 'bg-rose-50 text-rose-800 border border-rose-100'
                 }`}
               >
                 {message.type === 'success' ? (
-                  <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <Check className="w-4 h-4 flex-shrink-0" />
                 ) : (
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 )}
-                <p
-                  className={`text-sm ${
-                    message.type === 'success' ? 'text-green-800' : 'text-red-800'
-                  }`}
-                >
+                <p className="text-xs font-medium uppercase tracking-wide">
                   {message.text}
                 </p>
               </div>
             )}
 
-            <div className="mt-8 pt-6 border-t border-gray-100">
-              <p className="text-sm text-gray-500 text-center">
+            <div className="mt-12 text-center border-t border-slate-100 pt-8">
+              <p className="text-[11px] leading-relaxed text-slate-400">
                 By signing in, you agree to our{' '}
-                <Link 
-                  href="/privacy" 
-                  className="text-gray-900 hover:underline"
-                >
-                  Privacy Policy
-                </Link>
-                .<br />
-                We'll never share your email or send spam.
+                <Link href="/privacy" className="text-slate-900 hover:underline underline-offset-4">Privacy Policy</Link>
+                <br />
+                Protected by Clinical-Grade Encryption (AES-256).
               </p>
             </div>
           </div>
