@@ -1,23 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ArrowRight, Mail, Check, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
-export default function LoginPage() {
+// Twacha Labs - Minimal Login Page
+// Matches the clean, light aesthetic of the landing page
+
+export default function TwachaLogin() {
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<{
-    type: 'success' | 'error'
-    text: string
-  } | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSent, setIsSent] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setMessage(null)
-
+    if (!email) return
+    
+    setIsLoading(true)
+    
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -28,142 +33,336 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      setMessage({
-        type: 'success',
-        text: 'Protocol initiated. Check your inbox for the magic link.',
-      })
-      setEmail('')
+      setIsLoading(false)
+      setIsSent(true)
     } catch (error: any) {
-      setMessage({
-        type: 'error',
-        text: error.message || 'Clinical system authentication failed',
+      setIsLoading(false)
+      // You can add error handling here if needed
+      console.error('Login error:', error)
+    }
+  }
+
+  const handleResend = async () => {
+    if (!email) return
+    setIsLoading(true)
+    
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       })
+
+      if (error) throw error
+    } catch (error: any) {
+      console.error('Resend error:', error)
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex selection:bg-blue-100">
-      {/* Left Panel - Branding (Dark Clinical) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#020617] relative overflow-hidden border-r border-slate-800">
-        {/* Superior Pattern overlay: Smaller dots for higher density */}
-        <div 
-          className="absolute inset-0 opacity-[0.15]"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, #334155 1px, transparent 0)`,
-            backgroundSize: '24px 24px'
-          }}
-        />
-        
-        {/* Atmospheric Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-blue-500/5 filter blur-[120px] rounded-full" />
-        
-        <Link
+    <div style={{
+      minHeight: '100vh',
+      background: '#fafafa',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      color: '#0a0a0a',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      {/* Header */}
+      <header style={{
+        padding: '20px 40px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <Link 
           href="/"
-          className="absolute top-12 left-12 text-xs font-mono uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-colors z-10"
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px',
+            textDecoration: 'none',
+            color: '#0a0a0a',
+          }}
         >
-          [ back_to_home ]
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.7 }}>
+            <circle cx="6" cy="6" r="2" fill="#0a0a0a"/>
+            <circle cx="18" cy="6" r="2" fill="#0a0a0a"/>
+            <circle cx="6" cy="18" r="2" fill="#0a0a0a"/>
+            <circle cx="18" cy="18" r="2" fill="#0a0a0a"/>
+            <circle cx="12" cy="12" r="2" fill="#0a0a0a"/>
+          </svg>
+          <span style={{
+            fontSize: '17px',
+            fontWeight: '600',
+            letterSpacing: '-0.01em',
+          }}>Twacha Labs</span>
         </Link>
-        
-        <div className="flex items-center justify-center w-full h-full relative z-10">
-          <div className="max-w-sm text-center">
-            <div className="flex items-center justify-center space-x-3 mb-10">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                <div className="w-5 h-5 border-2 border-slate-950 rounded-sm" />
-              </div>
-              <span className="text-xl font-medium tracking-tight text-white">Twacha Labs</span>
-            </div>
-            <h2 className="text-4xl font-light tracking-tight text-white mb-6">
+      </header>
+
+      {/* Main Content */}
+      <main style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 24px',
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translateY(0)' : 'translateY(20px)',
+        transition: 'all 0.5s ease-out',
+      }}>
+        {!isSent ? (
+          <div style={{
+            width: '100%',
+            maxWidth: '360px',
+            textAlign: 'center',
+          }}>
+            <h1 style={{
+              fontSize: '32px',
+              fontWeight: '600',
+              letterSpacing: '-0.02em',
+              marginBottom: '12px',
+              color: '#0a0a0a',
+            }}>
               Welcome back
-            </h2>
-            <p className="text-slate-400 font-light leading-relaxed px-4">
-              Access your clinical dashboard to monitor your skin health journey and analyze scan progress.
+            </h1>
+            
+            <p style={{
+              fontSize: '15px',
+              color: '#888',
+              marginBottom: '40px',
+              lineHeight: 1.5,
+            }}>
+              Enter your email to receive a sign-in link.
             </p>
-          </div>
-        </div>
-      </div>
 
-      {/* Right Panel - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-slate-50 p-6 md:p-12">
-        <div className="w-full max-w-md">
-          {/* Form Card */}
-          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 p-8 md:p-12">
-            <div className="mb-10 text-center">
-              <h1 className="text-3xl font-medium text-slate-900 tracking-tight mb-3">
-                Sign in
-              </h1>
-              <p className="text-slate-500 font-light text-sm">
-                Enter your email to receive a secure magic link.
-              </p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <label 
-                  htmlFor="email"
-                  className="block text-[10px] uppercase tracking-widest font-semibold text-slate-400 ml-1"
-                >
-                  Email address
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '16px', textAlign: 'left' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#666',
+                  marginBottom: '8px',
+                }}>
+                  Email
                 </label>
                 <input
-                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  disabled={loading}
-                  className="w-full px-4 py-4 border border-slate-200 rounded-2xl bg-slate-50/50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all disabled:opacity-50 text-base"
+                  disabled={isLoading}
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    background: 'white',
+                    border: '1px solid #e5e5e5',
+                    borderRadius: '10px',
+                    color: '#0a0a0a',
+                    fontSize: '15px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#0a0a0a'}
+                  onBlur={e => e.target.style.borderColor = '#e5e5e5'}
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-slate-950 text-white py-4 rounded-2xl font-medium text-sm hover:bg-black transition-all shadow-lg shadow-slate-200 disabled:opacity-50 flex items-center justify-center group"
+                disabled={isLoading || !email}
+                style={{
+                  width: '100%',
+                  padding: '14px 32px',
+                  background: isLoading ? '#666' : '#0a0a0a',
+                  border: 'none',
+                  borderRadius: '100px',
+                  color: 'white',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
               >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                {isLoading ? (
+                  <>
+                    <svg 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2"
+                      style={{ animation: 'spin 1s linear infinite' }}
+                    >
+                      <path d="M21 12a9 9 0 11-6.219-8.56" />
+                    </svg>
+                    Sending...
+                  </>
                 ) : (
                   <>
-                    <span>Send magic link</span>
-                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    Continue
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
                   </>
                 )}
               </button>
             </form>
 
-            {message && (
-              <div
-                className={`mt-8 p-4 rounded-2xl flex items-center space-x-3 animate-in fade-in slide-in-from-top-2 duration-300 ${
-                  message.type === 'success'
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-100'
-                    : 'bg-rose-50 text-rose-800 border border-rose-100'
-                }`}
-              >
-                {message.type === 'success' ? (
-                  <Check className="w-4 h-4 flex-shrink-0" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                )}
-                <p className="text-xs font-medium uppercase tracking-wide">
-                  {message.text}
-                </p>
-              </div>
-            )}
-
-            <div className="mt-12 text-center border-t border-slate-100 pt-8">
-              <p className="text-[11px] leading-relaxed text-slate-400">
-                By signing in, you agree to our{' '}
-                <Link href="/privacy" className="text-slate-900 hover:underline underline-offset-4">Privacy Policy</Link>
-                <br />
-                Protected by Clinical-Grade Encryption (AES-256).
-              </p>
-            </div>
+            <p style={{
+              marginTop: '24px',
+              fontSize: '12px',
+              color: '#b0b0b0',
+              lineHeight: 1.5,
+            }}>
+              By continuing, you agree to our{' '}
+              <Link href="/privacy" style={{ color: '#888', textDecoration: 'underline' }}>
+                Privacy Policy
+              </Link>
+            </p>
           </div>
-        </div>
-      </div>
+        ) : (
+          <div style={{
+            width: '100%',
+            maxWidth: '360px',
+            textAlign: 'center',
+            animation: 'fadeIn 0.4s ease-out',
+          }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              margin: '0 auto 24px',
+              borderRadius: '50%',
+              background: '#f5f5f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
+                <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2"/>
+                <path d="M22 6v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6"/>
+                <path d="M22 6l-10 7L2 6"/>
+              </svg>
+            </div>
+            
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: '600',
+              letterSpacing: '-0.02em',
+              marginBottom: '12px',
+              color: '#0a0a0a',
+            }}>
+              Check your email
+            </h1>
+            
+            <p style={{
+              fontSize: '15px',
+              color: '#888',
+              marginBottom: '8px',
+              lineHeight: 1.5,
+            }}>
+              We sent a sign-in link to
+            </p>
+            
+            <p style={{
+              fontSize: '15px',
+              fontWeight: '500',
+              color: '#0a0a0a',
+              marginBottom: '32px',
+            }}>
+              {email}
+            </p>
+
+            <button
+              onClick={() => {
+                setIsSent(false)
+                setEmail('')
+              }}
+              style={{
+                padding: '12px 24px',
+                background: '#f5f5f5',
+                border: 'none',
+                borderRadius: '100px',
+                color: '#666',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+              }}
+            >
+              Use a different email
+            </button>
+
+            <p style={{
+              marginTop: '32px',
+              fontSize: '13px',
+              color: '#b0b0b0',
+            }}>
+              Didn't receive the email?{' '}
+              <button
+                onClick={handleResend}
+                disabled={isLoading}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#666',
+                  textDecoration: 'underline',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  fontSize: '13px',
+                }}
+              >
+                Resend
+              </button>
+            </p>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer style={{
+        padding: '20px 40px',
+        textAlign: 'center',
+      }}>
+        <p style={{
+          fontSize: '12px',
+          color: '#ccc',
+        }}>
+          Protected by clinical-grade encryption
+        </p>
+      </footer>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        input::placeholder {
+          color: #b0b0b0;
+        }
+        
+        button:hover:not(:disabled) {
+          opacity: 0.9;
+        }
+      `}</style>
     </div>
   )
 }
