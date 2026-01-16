@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import StartFreeFlow, { StartFreeFlowData } from '../components/StartFreeFlow';
+import HybridScanFlow from '../components/HybridScanFlow';
 import UpgradePrompt from '../components/UpgradePrompt';
 import ResultsDashboard from '../components/ResultsDashboard';
 import { canAnalyze, incrementUsage, getUserUsage } from '@/lib/usage';
@@ -61,87 +61,12 @@ export default function AnalysisPage() {
     }
   };
 
-  const handleFlowComplete = async (data: StartFreeFlowData) => {
-    if (!data.imageUrl) return;
-    
-    // Check usage limit again before analyzing
-    const userId = 'temp_user_id'; // TODO: Replace with actual user ID
-    const check = canAnalyze(userId);
-    
-    if (!check.allowed) {
-      setShowUpgradePrompt(true);
-      return;
-    }
-    
-    setIsAnalyzing(true);
-    setLoadingStage('syncing');
-    
-    try {
-      // Stage 1: Syncing to Dermal Vault (image upload is already done, but show this state)
-      await new Promise(resolve => setTimeout(resolve, 500)); // Brief delay to show syncing state
-      setLoadingStage('analyzing');
-      
-      // Stage 2: AI Diagnostic in Progress
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          imageUrl: data.imageUrl,
-          userId: userId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Clinical Data Sync Error');
-      }
-
-      const result = await response.json();
-      
-      // Increment usage after successful analysis
-      incrementUsage(userId);
-      const updatedUsage = getUserUsage(userId);
-      setAnalysisCount(updatedUsage.analysisCount);
-      
-      // Map new OpenAI API response format to component-expected format
-      // New format: gags_score, lesion_type, extraction_eligible, triage_level, summary, action_step, scientific_note, active_ingredients, ai_confidence
-      // Old format: score, verdict, analysis, recommendation
-      const mappedResult: AnalysisResult = {
-        // Convert GAGS score (1-4) to a 0-100 scale for display
-        score: result.gags_score !== undefined 
-          ? Math.round((1 - (result.gags_score - 1) / 3) * 100) // Convert 1-4 to 0-100 (inverted)
-          : Math.round((result.ai_confidence || 0.7) * 100),
-        verdict: result.triage_level || result.verdict || 'UNKNOWN',
-        // Use new user-friendly fields: summary, action_step, scientific_note
-        analysis: result.summary || result.analysis_summary || result.diagnosis || 'Analysis completed',
-        recommendation: getRecommendationFromTriage(
-          result.triage_level || result.verdict || 'UNKNOWN',
-          result.extraction_eligible === 'YES'
-        ),
-        imagePath: result.imageUrl || result.imagePath || data.imageUrl,
-        // Add new fields for clinical report
-        gagsScore: result.gags_score,
-        lesionType: result.lesion_type,
-        extractionEligible: result.extraction_eligible,
-        activeIngredients: result.active_ingredients || [],
-        aiConfidence: result.ai_confidence,
-        createdAt: new Date().toISOString(),
-        // New user-friendly fields
-        summary: result.summary,
-        actionStep: result.action_step,
-        scientificNote: result.scientific_note,
-      };
-      
-      setAnalysisResult(mappedResult);
-      setIsAnalyzing(false);
-    } catch (error) {
-      console.error('Clinical Data Sync Error:', error);
-      setIsAnalyzing(false);
-      // Show error message with clinical terminology
-      alert('Clinical Data Sync Error: Unable to complete analysis. Please try again or contact support.');
-    }
+  // The HybridScanFlow component handles its own analysis flow
+  // This handler is called when the flow completes (after email submission)
+  const handleFlowComplete = async (data: { imageUrl: string; email?: string }) => {
+    // The hybrid flow already handles analysis internally
+    // This is just for any post-completion logic if needed
+    console.log('Flow completed with email:', data.email);
   };
 
   if (showUpgradePrompt && !canProceed) {
@@ -154,41 +79,10 @@ export default function AnalysisPage() {
     );
   }
 
-  // Show results if analysis is complete
-  if (analysisResult) {
-    return (
-      <ResultsDashboard
-        analysisResult={analysisResult}
-        email=""
-      />
-    );
-  }
-
-  // Show loading state with two stages
-  if (isAnalyzing) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-black border-t-transparent mb-4" />
-          <h2 className="text-2xl font-bold mb-2 font-mono">
-            {loadingStage === 'syncing' 
-              ? '[SYNCING TO DERMAL VAULT...]'
-              : '[AI DIAGNOSTIC IN PROGRESS...]'
-            }
-          </h2>
-          <p className="text-gray-500 font-mono text-sm">
-            {loadingStage === 'syncing' 
-              ? 'Storing scan image securely...'
-              : 'Analyzing with GPT-4o clinical AI...'
-            }
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // The HybridScanFlow component handles the entire flow internally
+  // including analysis, results preview, and email gate
   return (
-    <StartFreeFlow
+    <HybridScanFlow
       onComplete={handleFlowComplete}
       onBack={() => router.push('/')}
     />
