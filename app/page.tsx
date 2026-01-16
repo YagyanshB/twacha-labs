@@ -494,9 +494,9 @@ function Footer() {
       <div className="footer-content">
         <div className="footer-brand">Twacha Labs</div>
         <div className="footer-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Contact</a>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/contact">Contact</Link>
         </div>
       </div>
       <div className="mt-4 text-center"></div>

@@ -3,10 +3,10 @@
 import React from 'react'
 import Link from 'next/link'
 
-// Twacha Labs - Privacy Policy
+// Twacha Labs - Terms of Service
 // Minimal, clean design matching landing page aesthetic
 
-export default function PrivacyPolicy() {
+export default function TermsOfService() {
   return (
     <div style={{
       minHeight: '100vh',
@@ -85,7 +85,7 @@ export default function PrivacyPolicy() {
             marginBottom: '16px',
             lineHeight: 1.1,
           }}>
-            Privacy Policy
+            Terms of Service
           </h1>
           <p style={{ fontSize: '15px', color: '#888' }}>
             Last updated: January 16, 2026
@@ -99,8 +99,8 @@ export default function PrivacyPolicy() {
         }}>
           <section style={{ marginBottom: '48px' }}>
             <p style={{ marginBottom: '24px' }}>
-              At Twacha Labs, we take your privacy seriously. This policy describes how we collect, 
-              use, and protect your personal information when you use our skin analysis services.
+              Welcome to Twacha Labs. By using our services, you agree to these terms. 
+              Please read them carefully.
             </p>
           </section>
 
@@ -112,20 +112,17 @@ export default function PrivacyPolicy() {
               marginBottom: '16px',
               letterSpacing: '-0.01em',
             }}>
-              Information We Collect
+              1. Service Description
             </h2>
             <p style={{ marginBottom: '16px' }}>
-              <strong style={{ color: '#0a0a0a' }}>Account Information:</strong> When you create an account, 
-              we collect your email address to authenticate your identity and send you scan results.
-            </p>
-            <p style={{ marginBottom: '16px' }}>
-              <strong style={{ color: '#0a0a0a' }}>Facial Images:</strong> When you use our scan feature, 
-              we temporarily process your facial images to analyze skin health metrics. Images are processed 
-              using clinical-grade encryption (AES-256).
+              Twacha Labs provides AI-powered skin analysis services designed for men. Our service 
+              analyzes facial images to provide insights about skin health, including hydration levels, 
+              texture, pore health, and other metrics.
             </p>
             <p>
-              <strong style={{ color: '#0a0a0a' }}>Usage Data:</strong> We collect anonymized data about 
-              how you interact with our service to improve the user experience.
+              <strong style={{ color: '#0a0a0a' }}>Important:</strong> Our service is for informational 
+              purposes only and does not constitute medical advice. For medical skin conditions, please 
+              consult a qualified dermatologist.
             </p>
           </section>
 
@@ -137,14 +134,14 @@ export default function PrivacyPolicy() {
               marginBottom: '16px',
               letterSpacing: '-0.01em',
             }}>
-              How We Use Your Information
+              2. Account Registration
             </h2>
-            <p style={{ marginBottom: '16px' }}>We use your information to:</p>
-            <ul style={{ paddingLeft: '24px', marginBottom: '16px' }}>
-              <li style={{ marginBottom: '8px' }}>Provide personalized skin analysis and recommendations</li>
-              <li style={{ marginBottom: '8px' }}>Track your skin health progress over time</li>
-              <li style={{ marginBottom: '8px' }}>Send you scan results and account notifications</li>
-              <li style={{ marginBottom: '8px' }}>Improve our AI analysis algorithms (using anonymized data only)</li>
+            <p style={{ marginBottom: '16px' }}>To use our services, you must:</p>
+            <ul style={{ paddingLeft: '24px' }}>
+              <li style={{ marginBottom: '8px' }}>Be at least 18 years old</li>
+              <li style={{ marginBottom: '8px' }}>Provide accurate account information</li>
+              <li style={{ marginBottom: '8px' }}>Maintain the security of your account credentials</li>
+              <li style={{ marginBottom: '8px' }}>Notify us immediately of any unauthorized access</li>
             </ul>
           </section>
 
@@ -156,16 +153,56 @@ export default function PrivacyPolicy() {
               marginBottom: '16px',
               letterSpacing: '-0.01em',
             }}>
-              Data Security
+              3. Acceptable Use
+            </h2>
+            <p style={{ marginBottom: '16px' }}>You agree not to:</p>
+            <ul style={{ paddingLeft: '24px' }}>
+              <li style={{ marginBottom: '8px' }}>Upload images of anyone other than yourself without their consent</li>
+              <li style={{ marginBottom: '8px' }}>Use the service for any illegal purpose</li>
+              <li style={{ marginBottom: '8px' }}>Attempt to reverse engineer our AI algorithms</li>
+              <li style={{ marginBottom: '8px' }}>Share your account with others</li>
+              <li style={{ marginBottom: '8px' }}>Use automated tools to access the service</li>
+            </ul>
+          </section>
+
+          <section style={{ marginBottom: '48px' }}>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#0a0a0a',
+              marginBottom: '16px',
+              letterSpacing: '-0.01em',
+            }}>
+              4. Intellectual Property
             </h2>
             <p style={{ marginBottom: '16px' }}>
-              Your data is protected by clinical-grade security measures:
+              All content, features, and functionality of Twacha Labs—including our AI models, 
+              algorithms, design, and branding—are owned by Twacha Labs and protected by intellectual 
+              property laws.
+            </p>
+            <p>
+              You retain ownership of any images you upload. By uploading images, you grant us a 
+              limited license to process them for the purpose of providing our services.
+            </p>
+          </section>
+
+          <section style={{ marginBottom: '48px' }}>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#0a0a0a',
+              marginBottom: '16px',
+              letterSpacing: '-0.01em',
+            }}>
+              5. Disclaimer of Warranties
+            </h2>
+            <p style={{ marginBottom: '16px' }}>
+              Our service is provided "as is" without warranties of any kind. We do not guarantee:
             </p>
             <ul style={{ paddingLeft: '24px' }}>
-              <li style={{ marginBottom: '8px' }}>AES-256 encryption for all stored data</li>
-              <li style={{ marginBottom: '8px' }}>TLS 1.3 for data in transit</li>
-              <li style={{ marginBottom: '8px' }}>SOC 2 compliant infrastructure</li>
-              <li style={{ marginBottom: '8px' }}>Regular security audits and penetration testing</li>
+              <li style={{ marginBottom: '8px' }}>The accuracy of skin analysis results</li>
+              <li style={{ marginBottom: '8px' }}>That the service will be uninterrupted or error-free</li>
+              <li style={{ marginBottom: '8px' }}>That recommendations will achieve specific results</li>
             </ul>
           </section>
 
@@ -177,12 +214,12 @@ export default function PrivacyPolicy() {
               marginBottom: '16px',
               letterSpacing: '-0.01em',
             }}>
-              Data Retention
+              6. Limitation of Liability
             </h2>
             <p>
-              We retain your scan history and account data for as long as your account is active. 
-              You can request deletion of your data at any time by contacting us. Upon account deletion, 
-              all personal data including facial images will be permanently removed within 30 days.
+              To the maximum extent permitted by law, Twacha Labs shall not be liable for any 
+              indirect, incidental, special, consequential, or punitive damages resulting from 
+              your use of the service, including any decisions made based on our analysis results.
             </p>
           </section>
 
@@ -194,16 +231,12 @@ export default function PrivacyPolicy() {
               marginBottom: '16px',
               letterSpacing: '-0.01em',
             }}>
-              Your Rights
+              7. Modifications to Service
             </h2>
-            <p style={{ marginBottom: '16px' }}>You have the right to:</p>
-            <ul style={{ paddingLeft: '24px' }}>
-              <li style={{ marginBottom: '8px' }}>Access your personal data</li>
-              <li style={{ marginBottom: '8px' }}>Request correction of inaccurate data</li>
-              <li style={{ marginBottom: '8px' }}>Request deletion of your data</li>
-              <li style={{ marginBottom: '8px' }}>Export your data in a portable format</li>
-              <li style={{ marginBottom: '8px' }}>Opt out of marketing communications</li>
-            </ul>
+            <p>
+              We reserve the right to modify, suspend, or discontinue any part of our service at 
+              any time. We will provide reasonable notice of significant changes when possible.
+            </p>
           </section>
 
           <section style={{ marginBottom: '48px' }}>
@@ -214,13 +247,28 @@ export default function PrivacyPolicy() {
               marginBottom: '16px',
               letterSpacing: '-0.01em',
             }}>
-              Third-Party Services
+              8. Termination
             </h2>
             <p>
-              We use select third-party services to operate our platform, including cloud hosting 
-              (with servers located in secure data centers), authentication services, and analytics. 
-              These partners are contractually bound to protect your data and use it only for the 
-              purposes we specify.
+              We may terminate or suspend your account at our discretion if you violate these terms. 
+              You may also delete your account at any time through your dashboard settings or by 
+              contacting us.
+            </p>
+          </section>
+
+          <section style={{ marginBottom: '48px' }}>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#0a0a0a',
+              marginBottom: '16px',
+              letterSpacing: '-0.01em',
+            }}>
+              9. Governing Law
+            </h2>
+            <p>
+              These terms are governed by the laws of the jurisdiction in which Twacha Labs operates. 
+              Any disputes will be resolved through binding arbitration, except where prohibited by law.
             </p>
           </section>
 
@@ -232,13 +280,12 @@ export default function PrivacyPolicy() {
               marginBottom: '16px',
               letterSpacing: '-0.01em',
             }}>
-              Contact Us
+              10. Contact
             </h2>
             <p>
-              If you have questions about this Privacy Policy or want to exercise your data rights, 
-              contact us at{' '}
-              <a href="mailto:privacy@twachalabs.io" style={{ color: '#0a0a0a', textDecoration: 'underline' }}>
-                privacy@twachalabs.io
+              For questions about these Terms of Service, contact us at{' '}
+              <a href="mailto:legal@twachalabs.io" style={{ color: '#0a0a0a', textDecoration: 'underline' }}>
+                legal@twachalabs.io
               </a>
             </p>
           </section>
@@ -261,7 +308,7 @@ export default function PrivacyPolicy() {
             © 2026 Twacha Labs. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: '24px' }}>
-            <Link href="/terms" style={{ fontSize: '13px', color: '#888', textDecoration: 'none' }}>Terms</Link>
+            <Link href="/privacy" style={{ fontSize: '13px', color: '#888', textDecoration: 'none' }}>Privacy</Link>
             <Link href="/contact" style={{ fontSize: '13px', color: '#888', textDecoration: 'none' }}>Contact</Link>
           </div>
         </div>
