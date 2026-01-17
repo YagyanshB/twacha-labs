@@ -600,6 +600,31 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
         // Don't fail the request if DB insert fails
       } else {
         console.log("✅ Scan saved to database");
+        
+        // Increment scan count for user
+        if (userId) {
+          try {
+            // Call the RPC function to increment scan count
+            const { data, error: incrementError } = await supabase.rpc('increment_scan_count', {
+              p_user_id: userId
+            });
+            
+            if (incrementError) {
+              // Check if error is because function doesn't exist (migration not run)
+              if (incrementError.message?.includes('function') && incrementError.message?.includes('does not exist')) {
+                console.warn("⚠️ increment_scan_count function not found. Please run migration_scan_limits.sql in Supabase.");
+              } else {
+                console.error("❌ Error incrementing scan count:", incrementError);
+              }
+              // Don't fail the request if increment fails
+            } else {
+              console.log("✅ Scan count incremented for user:", userId);
+            }
+          } catch (incrementErr: any) {
+            console.error("❌ Error calling increment_scan_count:", incrementErr?.message || incrementErr);
+            // Continue - don't fail the request
+          }
+        }
       }
     } catch (dbErr) {
       console.error("❌ Database error:", dbErr);

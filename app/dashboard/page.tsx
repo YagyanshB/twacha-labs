@@ -4,6 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
+import { useScanAllowance } from '@/hooks/useScanAllowance';
+import ScanButton from '@/app/components/ScanButton';
+import LowScansWarning from '@/app/components/LowScansWarning';
+import UpgradeModal from '@/app/components/UpgradeModal';
 
 // Twacha Labs - Men's Skin Health Dashboard
 // Designed for the first 200 beta users
@@ -12,9 +16,12 @@ import { useUser } from '@/hooks/useUser';
 export default function TwachaDashboard() {
   const { user, loading, signOut } = useUser();
   const router = useRouter();
+  const { scansUsed, scansRemaining, isPremium, canScan, limit, refresh } = useScanAllowance();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedScan, setSelectedScan] = useState(null);
   const [mounted, setMounted] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -25,6 +32,24 @@ export default function TwachaDashboard() {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  const handleNewScan = () => {
+    if (!canScan) {
+      // No scans left - show upgrade modal
+      setShowUpgradeModal(true);
+    } else if (scansRemaining === 1) {
+      // Last scan - show warning first
+      setShowWarningModal(true);
+    } else {
+      // Has scans - proceed to scan
+      router.push('/analysis');
+    }
+  };
+
+  const proceedToScan = () => {
+    setShowWarningModal(false);
+    router.push('/analysis');
+  };
 
   if (loading || !user) {
     return (
@@ -183,39 +208,28 @@ export default function TwachaDashboard() {
         </Link>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <Link href="/analysis" style={{
-            padding: '10px 20px',
-            background: '#0a0a0a',
-            border: 'none',
-            borderRadius: '100px',
-            color: 'white',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            textDecoration: 'none',
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-            New Scan
-          </Link>
+          <ScanButton
+            scansUsed={scansUsed}
+            scansLimit={limit}
+            isPremium={isPremium}
+            onScan={handleNewScan}
+            onUpgrade={() => setShowUpgradeModal(true)}
+          />
           
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            background: '#f0f0f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-          }}>
+          <div 
+            onClick={signOut}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: '#f0f0f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+            }}>
             {userData.name[0].toUpperCase()}
           </div>
         </div>
@@ -935,6 +949,27 @@ export default function TwachaDashboard() {
           </div>
         )}
       </main>
+
+      {/* Warning modal for last scan */}
+      {showWarningModal && (
+        <LowScansWarning
+          scansRemaining={scansRemaining}
+          onContinue={proceedToScan}
+          onUpgrade={() => {
+            setShowWarningModal(false);
+            setShowUpgradeModal(true);
+          }}
+        />
+      )}
+
+      {/* Upgrade modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={() => {
+          router.push('/pricing');
+        }}
+      />
 
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
