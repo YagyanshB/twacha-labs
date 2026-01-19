@@ -66,7 +66,6 @@ export default function AnalysisPage() {
   const handleFlowComplete = async (data: { imageUrl: string; email?: string }) => {
     // The hybrid flow already handles analysis internally
     // This is just for any post-completion logic if needed
-    console.log('Flow completed with email:', data.email);
   };
 
   if (showUpgradePrompt && !canProceed) {

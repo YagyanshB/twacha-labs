@@ -30,10 +30,6 @@ export async function uploadImageToSupabase(
       file = new File([imageData], uniqueFileName, { type: imageData.type || 'image/jpeg' });
     }
 
-    console.log('📤 Uploading image to Supabase Storage...');
-    console.log('   File name:', fileName);
-    console.log('   File size:', file.size, 'bytes');
-
     const { data, error } = await supabase.storage
       .from('scan-images')
       .upload(fileName, file, {
@@ -54,9 +50,6 @@ export async function uploadImageToSupabase(
     if (!urlData?.publicUrl) {
       throw new Error('Failed to get public URL after upload');
     }
-
-    console.log('✅ Image uploaded successfully');
-    console.log('   Public URL:', urlData.publicUrl);
 
     return urlData.publicUrl;
   } catch (error: any) {
