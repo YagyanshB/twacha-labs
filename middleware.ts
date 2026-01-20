@@ -37,7 +37,9 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/scan', '/analysis'];
+  // Note: /analysis is NOT protected - users can scan anonymously
+  // They'll be prompted to login only when saving results
+  const protectedRoutes = ['/dashboard'];
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
   );

@@ -135,12 +135,6 @@ export default function AnalysisPage() {
       return;
     }
 
-    // Require user to be logged in to save results
-    if (!user) {
-      setAnalysisError('Please log in to save your scan results');
-      return;
-    }
-
     setIsAnalyzing(true);
     setAnalysisError(null);
     setLoadingStage('analyzing');
@@ -149,7 +143,7 @@ export default function AnalysisPage() {
       // Convert Supabase URL to base64
       const base64Image = await imageUrlToBase64(data.imageUrl);
 
-      // Call the skin analysis API
+      // Call the skin analysis API (works for anonymous users)
       const response = await fetch('/api/analyze-skin', {
         method: 'POST',
         headers: {
@@ -166,6 +160,16 @@ export default function AnalysisPage() {
       }
 
       const result: SkinAnalysisResult = await response.json();
+
+      // Display results immediately (works for anonymous users)
+      setSkinAnalysisResult(result);
+
+      // If user is logged in, save to database
+      if (!user) {
+        console.log('Anonymous scan - results shown but not saved to database');
+        // User will be prompted to login when they want to save or view dashboard
+        return;
+      }
 
       // Save scan to database with full analysis data
       const { data: scan, error: scanError } = await supabase
