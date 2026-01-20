@@ -25,12 +25,18 @@ export default function TwachaDashboard() {
     stats,
     detectedIssues,
     isLoading: scoresLoading,
+    latestScan,
   } = useRealtimeScores(user?.id);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedScan, setSelectedScan] = useState(null);
   const [mounted, setMounted] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+
+  // Real data from database
+  const [scanHistory, setScanHistory] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [isLoadingExtras, setIsLoadingExtras] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -41,6 +47,116 @@ export default function TwachaDashboard() {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  // Fetch dashboard data (scan history and recommendations)
+  const fetchDashboardData = async (userId: string) => {
+    setIsLoadingExtras(true);
+
+    const { supabase } = await import('@/lib/supabase');
+
+    try {
+      // Get scan history for progress chart (last 10 scans)
+      const { data: historyData } = await supabase
+        .from('scans')
+        .select('id, overall_score, hydration_score, oil_control_score, pore_health_score, texture_score, clarity_score, created_at')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (historyData && historyData.length > 0) {
+        // Format for chart (reverse to show oldest first)
+        const formatted = historyData.reverse().map(scan => ({
+          date: new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          score: scan.overall_score,
+          hydration: scan.hydration_score,
+          oilControl: scan.oil_control_score,
+          poreHealth: scan.pore_health_score,
+          texture: scan.texture_score,
+          clarity: scan.clarity_score,
+        }));
+        setScanHistory(formatted);
+      }
+
+      // Get recommendations from latest scan
+      if (latestScan?.id) {
+        const { data: recsData } = await supabase
+          .from('recommendations')
+          .select('*')
+          .eq('scan_id', latestScan.id)
+          .order('priority', { ascending: true });
+
+        if (recsData && recsData.length > 0) {
+          // Format recommendations for display
+          const formatted = recsData.map((rec, idx) => ({
+            id: rec.id,
+            priority: rec.priority === 1 ? 'high' : 'medium',
+            title: rec.title,
+            description: rec.description,
+            action: rec.priority === 1 ? 'Add to routine' : 'Learn more',
+            icon: idx === 0 ? '🎯' : idx === 1 ? '💧' : '🔬',
+          }));
+          setRecommendations(formatted);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setIsLoadingExtras(false);
+    }
+  };
+
+  // Fetch data when user is available
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardData(user.id);
+    }
+  }, [user?.id, latestScan?.id]);
+
+  // Real-time subscription for new scans
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const setupRealtimeSubscription = async () => {
+      const { supabase } = await import('@/lib/supabase');
+
+      const channel = supabase
+        .channel('dashboard-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'scans',
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            // Refresh dashboard data when new scan is added
+            fetchDashboardData(user.id);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'recommendations',
+          },
+          () => {
+            // Refresh recommendations when new ones are added
+            fetchDashboardData(user.id);
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    setupRealtimeSubscription();
+  }, [user?.id]);
 
   const handleNewScan = () => {
     if (!canScan) {
@@ -108,44 +224,6 @@ export default function TwachaDashboard() {
       },
     }
   };
-
-  // Scan history for progress tracking
-  const scanHistory = [
-    { date: 'Jan 15', score: 72, hydration: 68, oilControl: 74, poreHealth: 65 },
-    { date: 'Jan 12', score: 70, hydration: 65, oilControl: 73, poreHealth: 66 },
-    { date: 'Jan 8', score: 68, hydration: 63, oilControl: 74, poreHealth: 67 },
-    { date: 'Jan 4', score: 66, hydration: 60, oilControl: 72, poreHealth: 65 },
-    { date: 'Jan 1', score: 65, hydration: 58, oilControl: 70, poreHealth: 64 },
-    { date: 'Dec 28', score: 63, hydration: 55, oilControl: 68, poreHealth: 62 },
-  ];
-
-  // Personalized recommendations
-  const recommendations = [
-    {
-      id: 1,
-      priority: 'high',
-      title: 'Target your blackheads',
-      description: 'Use a salicylic acid cleanser on your T-zone. This BHA penetrates pores to dissolve oil and dead skin buildup.',
-      action: 'Add to routine',
-      icon: '🎯',
-    },
-    {
-      id: 2,
-      priority: 'medium',
-      title: 'Boost hydration',
-      description: 'Your hydration is improving but still below optimal. Try a lightweight, oil-free moisturizer with hyaluronic acid.',
-      action: 'Learn more',
-      icon: '💧',
-    },
-    {
-      id: 3,
-      priority: 'medium',
-      title: 'Minimize pores',
-      description: 'Niacinamide can help reduce the appearance of enlarged pores. Look for 5% concentration in serums.',
-      action: 'See products',
-      icon: '🔬',
-    },
-  ];
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return '#22c55e';
@@ -766,73 +844,96 @@ export default function TwachaDashboard() {
               </div>
 
               {/* Simple bar chart */}
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '200px', padding: '0 20px' }}>
-                {scanHistory.slice().reverse().map((scan, i) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{
-                      width: '100%',
-                      height: `${scan.score * 2}px`,
-                      background: i === scanHistory.length - 1 ? '#0a0a0a' : '#e5e5e5',
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'height 0.5s ease-out',
-                      position: 'relative',
-                    }}>
-                      <span style={{
-                        position: 'absolute',
-                        top: '-24px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: i === scanHistory.length - 1 ? '#0a0a0a' : '#888',
+              {isLoadingExtras ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
+                  <p style={{ color: '#888', fontSize: '14px' }}>Loading scan history...</p>
+                </div>
+              ) : scanHistory.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+                  <p style={{ color: '#888', fontSize: '14px', marginBottom: '8px' }}>No scan history yet</p>
+                  <p style={{ color: '#aaa', fontSize: '13px' }}>Complete more scans to see your progress</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '200px', padding: '0 20px' }}>
+                  {scanHistory.slice().reverse().map((scan, i) => (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{
+                        width: '100%',
+                        height: `${scan.score * 2}px`,
+                        background: i === scanHistory.length - 1 ? '#0a0a0a' : '#e5e5e5',
+                        borderRadius: '4px 4px 0 0',
+                        transition: 'height 0.5s ease-out',
+                        position: 'relative',
                       }}>
-                        {scan.score}
-                      </span>
+                        <span style={{
+                          position: 'absolute',
+                          top: '-24px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: i === scanHistory.length - 1 ? '#0a0a0a' : '#888',
+                        }}>
+                          {scan.score}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>{scan.date}</span>
                     </div>
-                    <span style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>{scan.date}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Metric Comparison */}
-            <div style={{
-              background: 'white',
-              border: '1px solid #eee',
-              borderRadius: '16px',
-              padding: '24px',
-            }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px' }}>
-                First Scan vs Now
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px' }}>
-                {[
-                  { label: 'Overall Score', first: 63, now: 72 },
-                  { label: 'Hydration', first: 55, now: 68 },
-                  { label: 'Oil Control', first: 68, now: 74 },
-                  { label: 'Pore Health', first: 62, now: 65 },
-                ].map(metric => (
-                  <div key={metric.label} style={{
-                    padding: '20px',
-                    background: '#fafafa',
-                    borderRadius: '12px',
-                    textAlign: 'center',
-                  }}>
-                    <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{metric.label}</div>
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '20px', color: '#ccc' }}>{metric.first}</span>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                      <span style={{ fontSize: '24px', fontWeight: '600' }}>{metric.now}</span>
-                    </div>
-                    <div style={{ fontSize: '13px', color: '#22c55e', marginTop: '8px', fontWeight: '500' }}>
-                      +{metric.now - metric.first} improvement
-                    </div>
-                  </div>
-                ))}
+            {scanHistory.length >= 2 && (
+              <div style={{
+                background: 'white',
+                border: '1px solid #eee',
+                borderRadius: '16px',
+                padding: '24px',
+              }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '20px' }}>
+                  First Scan vs Now
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px' }}>
+                  {(() => {
+                    const firstScan = scanHistory[0];
+                    const latestScan = scanHistory[scanHistory.length - 1];
+                    const metrics = [
+                      { label: 'Overall Score', first: firstScan.score, now: latestScan.score },
+                      { label: 'Hydration', first: firstScan.hydration, now: latestScan.hydration },
+                      { label: 'Oil Control', first: firstScan.oilControl, now: latestScan.oilControl },
+                      { label: 'Pore Health', first: firstScan.poreHealth, now: latestScan.poreHealth },
+                    ];
+                    return metrics.map(metric => {
+                      const improvement = metric.now - metric.first;
+                      const isImproving = improvement > 0;
+                      return (
+                        <div key={metric.label} style={{
+                          padding: '20px',
+                          background: '#fafafa',
+                          borderRadius: '12px',
+                          textAlign: 'center',
+                        }}>
+                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '12px' }}>{metric.label}</div>
+                          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '20px', color: '#ccc' }}>{metric.first}</span>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isImproving ? '#22c55e' : '#ef4444'} strokeWidth="2">
+                              <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                            <span style={{ fontSize: '24px', fontWeight: '600' }}>{metric.now}</span>
+                          </div>
+                          <div style={{ fontSize: '13px', color: isImproving ? '#22c55e' : '#ef4444', marginTop: '8px', fontWeight: '500' }}>
+                            {isImproving ? '+' : ''}{improvement} {isImproving ? 'improvement' : 'change'}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -848,8 +949,50 @@ export default function TwachaDashboard() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gap: '16px' }}>
-              {recommendations.map(rec => (
+            {isLoadingExtras ? (
+              <div style={{
+                background: 'white',
+                border: '1px solid #eee',
+                borderRadius: '16px',
+                padding: '48px',
+                textAlign: 'center',
+              }}>
+                <p style={{ color: '#888', fontSize: '14px' }}>Loading recommendations...</p>
+              </div>
+            ) : recommendations.length === 0 ? (
+              <div style={{
+                background: 'white',
+                border: '1px solid #eee',
+                borderRadius: '16px',
+                padding: '48px',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>💡</div>
+                <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+                  No recommendations yet
+                </h3>
+                <p style={{ color: '#888', fontSize: '14px', marginBottom: '24px' }}>
+                  Complete a scan to get personalized skincare recommendations
+                </p>
+                <button
+                  onClick={handleNewScan}
+                  style={{
+                    padding: '12px 24px',
+                    background: '#0a0a0a',
+                    border: 'none',
+                    borderRadius: '100px',
+                    color: 'white',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Start Your First Scan
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {recommendations.map(rec => (
                 <div
                   key={rec.id}
                   style={{
@@ -909,9 +1052,11 @@ export default function TwachaDashboard() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
 
             {/* Daily Routine */}
+            {recommendations.length > 0 && (
             <div style={{
               background: 'white',
               border: '1px solid #eee',
@@ -977,6 +1122,7 @@ export default function TwachaDashboard() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         )}
       </main>
