@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import HybridScanFlow from '../components/HybridScanFlow';
+import StartFreeFlow, { StartFreeFlowData } from '../components/StartFreeFlow';
 import UpgradePrompt from '../components/UpgradePrompt';
 import ResultsDashboard from '../components/ResultsDashboard';
 import { canAnalyze, incrementUsage, getUserUsage } from '@/lib/usage';
@@ -61,10 +61,12 @@ export default function AnalysisPage() {
     }
   };
 
-  // The HybridScanFlow component handles its own analysis flow
-  // This handler is called when the flow completes (after email submission)
-  const handleFlowComplete = async (data: { imageUrl: string; email?: string }) => {
-    // The hybrid flow already handles analysis internally
+  // The StartFreeFlow component handles the camera capture and user data collection
+  // This handler is called when the flow completes with user's image and profile data
+  const handleFlowComplete = async (data: StartFreeFlowData) => {
+    // StartFreeFlow collects: imageUrl, age, skinType
+    // You can handle the analysis here or let the flow handle it
+    // For now, we'll redirect to results or show analysis
     // This is just for any post-completion logic if needed
   };
 
@@ -78,10 +80,10 @@ export default function AnalysisPage() {
     );
   }
 
-  // The HybridScanFlow component handles the entire flow internally
-  // including analysis, results preview, and email gate
+  // The StartFreeFlow component handles the entire flow internally
+  // including enhanced camera with face detection, age/skin type collection
   return (
-    <HybridScanFlow
+    <StartFreeFlow
       onComplete={handleFlowComplete}
       onBack={() => router.push('/')}
     />
