@@ -83,12 +83,13 @@ export function useRealtimeScores(userId: string | undefined): RealtimeScoresDat
     }
 
     try {
-      // Get latest 2 scans
+      // Get latest 2 scans (exclude deleted scans)
       const { data: scans, error: scansError } = await supabase
         .from('scans')
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'completed')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(2);
 

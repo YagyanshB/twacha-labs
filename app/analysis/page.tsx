@@ -102,6 +102,30 @@ export default function AnalysisPage() {
     });
   };
 
+  // Extract ingredient names from recommendation text
+  const extractIngredient = (recommendation: string): string | null => {
+    const ingredients = [
+      'salicylic acid',
+      'niacinamide',
+      'hyaluronic acid',
+      'retinol',
+      'benzoyl peroxide',
+      'glycolic acid',
+      'vitamin c',
+      'ceramides',
+      'peptides',
+      'zinc',
+    ];
+
+    const lowerRec = recommendation.toLowerCase();
+    for (const ingredient of ingredients) {
+      if (lowerRec.includes(ingredient)) {
+        return ingredient;
+      }
+    }
+    return null;
+  };
+
   // The StartFreeFlow component handles the camera capture and user data collection
   // This handler is called when the flow completes with user's image and profile data
   const handleFlowComplete = async (data: StartFreeFlowData) => {
@@ -143,7 +167,7 @@ export default function AnalysisPage() {
 
       const result: SkinAnalysisResult = await response.json();
 
-      // Save scan to database
+      // Save scan to database with full analysis data
       const { data: scan, error: scanError } = await supabase
         .from('scans')
         .insert({
@@ -158,6 +182,7 @@ export default function AnalysisPage() {
           clarity_score: result.metrics.clarity,
           skin_type: result.skinType,
           summary: result.summary,
+          analysis: result, // Store full GPT-4o response as jsonb
           analyzed_at: new Date().toISOString(),
         })
         .select()
@@ -194,6 +219,8 @@ export default function AnalysisPage() {
           priority: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
           title: rec,
           description: rec,
+          // Extract ingredient from recommendation text if present
+          ingredient: extractIngredient(rec),
         }));
 
         const { error: recsError } = await supabase
@@ -205,16 +232,8 @@ export default function AnalysisPage() {
         }
       }
 
-      // Update profile stats
-      const { error: profileError } = await supabase.rpc('increment_scan_count', {
-        p_user_id: user.id,
-      });
-
-      if (profileError) {
-        console.error('Failed to update profile stats:', profileError);
-      }
-
-      // Increment local usage counter
+      // Note: Profile stats (total_scans, current_streak) are auto-updated by database trigger
+      // Increment local usage counter for UI
       incrementUsage(user.id);
 
       // Display results

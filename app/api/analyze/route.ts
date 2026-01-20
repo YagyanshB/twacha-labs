@@ -466,47 +466,27 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
 
     // --- F. SAVE TO DB USING SERVICE ROLE KEY ---
     try {
-      // Format ai_verdict as "Extraction Eligibility + Triage Level"
+      // Format verdict as "Extraction Eligibility + Triage Level"
       const extractionStatus = aiResult.extraction_eligible === 'YES' ? 'Eligible' : 'Not Eligible';
-      const aiVerdict = `${extractionStatus} | ${aiResult.triage_level}`;
-      
-      // Combine summary, action_step, and scientific_note for database storage
-      const fullDiagnosis = `${aiResult.summary}\n\nAction: ${aiResult.action_step}\n\nTechnical: ${aiResult.scientific_note}`;
-      
+      const verdict = `${extractionStatus} | ${aiResult.triage_level}`;
+
       const { error: dbError } = await supabase.from('scans').insert({
         image_url: imageUrl,
         user_id: userId,
-        ai_diagnosis: fullDiagnosis, // Combined user-friendly and technical info
-        ai_verdict: aiVerdict, // Extraction Eligibility + Triage Level
-        ai_confidence: aiResult.ai_confidence
+        status: 'completed',
+        summary: aiResult.summary,
+        verdict: verdict, // Extraction Eligibility + Triage Level
+        confidence: aiResult.ai_confidence,
+        analysis: aiResult, // Store full AI response as jsonb
+        analyzed_at: new Date().toISOString(),
       });
 
       if (dbError) {
         console.error("❌ Database insert error:", dbError);
         // Don't fail the request if DB insert fails
       } else {
-        // Increment scan count for user
-        if (userId) {
-          try {
-            // Call the RPC function to increment scan count
-            const { data, error: incrementError } = await supabase.rpc('increment_scan_count', {
-              p_user_id: userId
-            });
-
-            if (incrementError) {
-              // Check if error is because function doesn't exist (migration not run)
-              if (incrementError.message?.includes('function') && incrementError.message?.includes('does not exist')) {
-                console.warn("⚠️ increment_scan_count function not found. Please run migration_scan_limits.sql in Supabase.");
-              } else {
-                console.error("❌ Error incrementing scan count:", incrementError);
-              }
-              // Don't fail the request if increment fails
-            }
-          } catch (incrementErr: any) {
-            console.error("❌ Error calling increment_scan_count:", incrementErr?.message || incrementErr);
-            // Continue - don't fail the request
-          }
-        }
+        // Note: Scan count is auto-incremented by database trigger
+        console.log("✅ Scan saved successfully (profile stats updated by trigger)");
       }
     } catch (dbErr) {
       console.error("❌ Database error:", dbErr);
