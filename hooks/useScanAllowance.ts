@@ -31,7 +31,7 @@ export function useScanAllowance() {
       }
 
       const { data, error } = await supabase
-        .rpc('check_scan_allowance', { p_user_id: user.id })
+        .rpc('check_scan_allowance', { user_id: user.id })
 
       if (error) {
         console.error('Error fetching scan allowance:', error)

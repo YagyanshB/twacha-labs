@@ -5,16 +5,16 @@ export const PRICING_TIERS = {
     currency: '£',
     interval: null,
     features: [
-      '1 analysis per month',
-      'Basic acne detection',
-      'General recommendations',
-      'Track 1 photo',
+      'Unlimited analyses',
+      'Advanced skin analysis',
+      'Unlimited progress tracking',
+      'Personalized recommendations',
       'Educational content'
     ],
     limits: {
-      analysesPerMonth: 1,
-      photoTracking: 1,
-      advancedAnalysis: false
+      analysesPerMonth: 999999,
+      photoTracking: 999999,
+      advancedAnalysis: true
     }
   },
   premium: {

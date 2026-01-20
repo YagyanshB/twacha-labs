@@ -23,27 +23,16 @@ const getSafeFallbackResponse = () => ({
 // Read knowledge base files
 const loadKnowledgeBase = () => {
   try {
-    console.log("📚 Loading knowledge base files...");
     const basePath = join(process.cwd(), 'knowledge-base');
-    console.log("   Base path:", basePath);
-    
+
     const acneDiagnosticsPath = join(basePath, 'acne_diagnostics.md');
     const extractionSafetyPath = join(basePath, 'extraction_safety_protocol.md');
     const activeIngredientsPath = join(basePath, 'active_ingredients.md');
-    
-    console.log("   Checking files exist...");
-    
+
     const acneDiagnostics = readFileSync(acneDiagnosticsPath, 'utf-8');
-    console.log("   ✅ acne_diagnostics.md loaded (", acneDiagnostics.length, "chars)");
-    
     const extractionSafety = readFileSync(extractionSafetyPath, 'utf-8');
-    console.log("   ✅ extraction_safety_protocol.md loaded (", extractionSafety.length, "chars)");
-    
     const activeIngredients = readFileSync(activeIngredientsPath, 'utf-8');
-    console.log("   ✅ active_ingredients.md loaded (", activeIngredients.length, "chars)");
-    
-    console.log("✅ All knowledge base files loaded successfully");
-    
+
     return {
       acneDiagnostics,
       extractionSafety,
@@ -116,14 +105,10 @@ const validateImageData = (imageData: string): string | null => {
 
 // Repair malformed JSON responses with comprehensive cleaning
 const repairJSON = (rawContent: string): string => {
-  console.log("🔧 Starting JSON repair...");
-  console.log("📝 Raw content (first 200 chars):", rawContent.substring(0, 200));
-  
   if (!rawContent || rawContent.trim() === '') {
-    console.log("⚠️ Empty content, returning fallback");
     return JSON.stringify(getSafeFallbackResponse());
   }
-  
+
   // Step 1: Remove markdown code blocks (various formats)
   let cleaned = rawContent
     .replace(/^```json\s*/gi, '')  // ```json at start
@@ -132,26 +117,22 @@ const repairJSON = (rawContent: string): string => {
     .replace(/^`/g, '')             // Single backtick at start
     .replace(/`$/g, '')             // Single backtick at end
     .trim();
-  
-  console.log("📝 After markdown removal (first 200 chars):", cleaned.substring(0, 200));
-  
+
   // Step 2: Try to extract JSON object if wrapped in text
   // Look for the first { and last } to extract the JSON object
   const firstBrace = cleaned.indexOf('{');
   const lastBrace = cleaned.lastIndexOf('}');
-  
+
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
     cleaned = cleaned.substring(firstBrace, lastBrace + 1);
-    console.log("📝 Extracted JSON object (first 200 chars):", cleaned.substring(0, 200));
   } else {
     // Try regex as fallback
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       cleaned = jsonMatch[0];
-      console.log("📝 Regex extracted JSON (first 200 chars):", cleaned.substring(0, 200));
     }
   }
-  
+
   // Step 3: Fix common JSON issues
   cleaned = cleaned
     .replace(/,\s*}/g, '}')           // Remove trailing commas before }
@@ -159,9 +140,7 @@ const repairJSON = (rawContent: string): string => {
     .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3')  // Replace single quotes in keys
     .replace(/:\s*'([^']+)'(\s*[,}])/g, ': "$1"$2')   // Replace single quotes in string values
     .replace(/'/g, '"');               // Replace any remaining single quotes (basic fix)
-  
-  console.log("📝 After JSON fixes (first 200 chars):", cleaned.substring(0, 200));
-  
+
   return cleaned;
 };
 
@@ -172,50 +151,12 @@ export async function POST(req: Request) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
-    // Comprehensive environment variable check with detailed logging
-    console.log("🔍 Environment Variables Check:");
-    console.log("   NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? `✅ Set (${supabaseUrl.length} chars, starts with: ${supabaseUrl.substring(0, 20)}...)` : "❌ Missing");
-    console.log("   SUPABASE_SERVICE_ROLE_KEY:", supabaseKey ? `✅ Set (${supabaseKey.length} chars)` : "❌ Missing");
-    console.log("   OPENAI_API_KEY:", openaiKey ? `✅ Set (${openaiKey.length} chars)` : "❌ Missing");
-    
     // Explicit boolean check for clearer error messages
     const envCheck = {
       url: !!supabaseUrl,
       key: !!supabaseKey,
       openai: !!openaiKey
     };
-    
-    console.error('Environment Variables Status:', envCheck);
-    
-    // Debug: List all environment variables that contain "SUPABASE" or "SERVICE"
-    console.log("🔍 Debugging: All env vars containing 'SUPABASE' or 'SERVICE':");
-    const allEnvVars = Object.keys(process.env);
-    const supabaseRelated = allEnvVars.filter(key => 
-      key.toUpperCase().includes('SUPABASE') || 
-      key.toUpperCase().includes('SERVICE')
-    );
-    supabaseRelated.forEach(key => {
-      const value = process.env[key];
-      console.log(`   ${key}: ${value ? `Set (${value.length} chars, starts with: ${value.substring(0, 20)}...)` : 'Empty'}`);
-    });
-    
-    // Check for common variations/typos
-    const possibleNames = [
-      'SUPABASE_SERVICE_ROLE_KEY',
-      'SUPABASE_SERVICE_ROLE',
-      'NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY',
-      'SUPABASE_SERVICE_KEY',
-      'SERVICE_ROLE_KEY',
-      'NEXT_PUBLIC_SUPABASE_URL',
-      'SUPABASE_URL'
-    ];
-    console.log("🔍 Checking for common variations:");
-    possibleNames.forEach(name => {
-      const value = process.env[name];
-      if (value) {
-        console.log(`   ⚠️ Found variation '${name}': Set (${value.length} chars)`);
-      }
-    });
     
     // CRITICAL: Fail fast if environment variables are missing
     if (!supabaseUrl || !supabaseKey) {
@@ -275,13 +216,10 @@ export async function POST(req: Request) {
     }
 
     // Only initialize clients AFTER all checks pass
-    console.log("🔑 All environment variables validated. Initializing clients...");
     const supabase = createClient(supabaseUrl, supabaseKey);
     const openai = new OpenAI({
       apiKey: openaiKey,
     });
-    
-    console.log("✅ OpenAI client initialized");
 
     // Load knowledge base
     const knowledgeBase = loadKnowledgeBase();
@@ -290,16 +228,8 @@ export async function POST(req: Request) {
     }
 
     // --- READ REQUEST ---
-    console.log("📥 Reading request body...");
     const body = await req.json();
     const { imageUrl, userId } = body;
-
-    console.log("📊 Request body keys:", Object.keys(body));
-    console.log("📊 Request data:", {
-      hasImageUrl: !!imageUrl,
-      hasUserId: !!userId,
-      imageUrl: imageUrl ? imageUrl.substring(0, 100) + "..." : null
-    });
 
     if (!imageUrl) {
       console.error("❌ No imageUrl provided in request");
@@ -317,18 +247,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid imageUrl format" }, { status: 400 });
     }
 
-    console.log("📸 Image URL received:", imageUrl);
-
     // --- A. FETCH IMAGE AND CONVERT TO BASE64 ---
-    console.log("📥 Fetching image from Supabase Storage...");
-    const fetchStartTime = Date.now();
     const imageBase64 = await fetchImageAsBase64(imageUrl);
-    const fetchDuration = Date.now() - fetchStartTime;
-    
-    console.log("📥 Image fetch completed");
-    console.log("   Duration:", fetchDuration, "ms");
-    console.log("   Status:", imageBase64 ? "✅ Success" : "❌ Failed");
-    
+
     if (!imageBase64) {
       console.error("❌ Failed to fetch image from URL:", imageUrl);
       return NextResponse.json({ 
@@ -337,14 +258,11 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    console.log("📥 Image fetched successfully");
-    console.log("   Base64 length:", imageBase64.length, "chars");
-
     // Extract base64 data and MIME type
     const base64Match = imageBase64.match(/^data:(image\/\w+);base64,(.+)$/);
     if (!base64Match) {
       console.error("❌ Invalid image format after fetch");
-      return NextResponse.json({ 
+      return NextResponse.json({
         ...getSafeFallbackResponse(),
         error: "Invalid image format"
       }, { status: 400 });
@@ -352,8 +270,6 @@ export async function POST(req: Request) {
 
     const mimeType = base64Match[1];
     const base64Data = base64Match[2];
-    console.log("   MIME type:", mimeType);
-    console.log("   Base64 data length:", base64Data.length, "chars");
 
     // --- C. BUILD CLINICAL PROMPT WITH KNOWLEDGE BASE ---
     let systemInstructions = `Act as a Senior Clinical Dermatologist with NHS experience. Analyze this 15x macro skin image.
@@ -425,17 +341,9 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
     }
 
     // --- D. ANALYZE WITH OPENAI GPT-4 VISION ---
-    console.log("🤖 Calling OpenAI GPT-4 Vision API...");
-    console.log("   Model: gpt-4o");
-    console.log("   Image URL:", imageUrl);
-    console.log("   Prompt length:", systemInstructions.length, "chars");
-    
     let aiResult;
-    
+
     try {
-      const apiStartTime = Date.now();
-      
-      console.log("📤 Sending request to OpenAI...");
       const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -464,18 +372,7 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
         max_tokens: 1000
       });
 
-      const apiDuration = Date.now() - apiStartTime;
-      console.log("✅ OpenAI API call completed");
-      console.log("   Duration:", apiDuration, "ms");
-
       const rawContent = completion.choices[0]?.message?.content;
-
-      console.log("📥 Raw response received from OpenAI");
-      console.log("   Content length:", rawContent?.length || 0, "chars");
-      if (rawContent) {
-        console.log("   First 500 chars:", rawContent.substring(0, 500));
-        console.log("   Last 200 chars:", rawContent.substring(Math.max(0, rawContent.length - 200)));
-      }
 
       // --- E. SAFE JSON PARSING with repair logic ---
       if (!rawContent || rawContent.trim() === "") {
@@ -483,20 +380,12 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
         console.error("   Response object:", JSON.stringify(completion, null, 2));
         aiResult = getSafeFallbackResponse();
       } else {
-        console.log("🔧 Starting JSON parsing and repair...");
         const repairedJSON = repairJSON(rawContent);
-        
-        console.log("📝 Repaired JSON (first 500 chars):", repairedJSON.substring(0, 500));
-        console.log("📝 Repaired JSON (last 200 chars):", repairedJSON.substring(Math.max(0, repairedJSON.length - 200)));
-        
+
         try {
-          console.log("🔍 Attempting JSON.parse...");
           aiResult = JSON.parse(repairedJSON);
-          console.log("✅ JSON.parse successful!");
-          console.log("📊 Parsed result:", JSON.stringify(aiResult, null, 2));
-          
+
           // Validate required fields exist
-          console.log("🔍 Validating required fields...");
           const validationErrors: string[] = [];
           
           if (typeof aiResult.gags_score !== 'number' || aiResult.gags_score < 1 || aiResult.gags_score > 4) {
@@ -549,9 +438,6 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
                 : [],
               ai_confidence: Math.max(0, Math.min(1, parseFloat(aiResult.ai_confidence.toFixed(2))))
             };
-            
-            console.log("✅ Successfully parsed and validated AI response");
-            console.log("📊 Final result:", JSON.stringify(aiResult, null, 2));
           }
         } catch (parseError: any) {
           console.error("❌ JSON Parse Error after repair");
@@ -580,51 +466,27 @@ Return ONLY valid JSON. No markdown, no explanations, no additional text.`;
 
     // --- F. SAVE TO DB USING SERVICE ROLE KEY ---
     try {
-      // Format ai_verdict as "Extraction Eligibility + Triage Level"
+      // Format verdict as "Extraction Eligibility + Triage Level"
       const extractionStatus = aiResult.extraction_eligible === 'YES' ? 'Eligible' : 'Not Eligible';
-      const aiVerdict = `${extractionStatus} | ${aiResult.triage_level}`;
-      
-      // Combine summary, action_step, and scientific_note for database storage
-      const fullDiagnosis = `${aiResult.summary}\n\nAction: ${aiResult.action_step}\n\nTechnical: ${aiResult.scientific_note}`;
-      
+      const verdict = `${extractionStatus} | ${aiResult.triage_level}`;
+
       const { error: dbError } = await supabase.from('scans').insert({
         image_url: imageUrl,
         user_id: userId,
-        ai_diagnosis: fullDiagnosis, // Combined user-friendly and technical info
-        ai_verdict: aiVerdict, // Extraction Eligibility + Triage Level
-        ai_confidence: aiResult.ai_confidence
+        status: 'completed',
+        summary: aiResult.summary,
+        verdict: verdict, // Extraction Eligibility + Triage Level
+        confidence: aiResult.ai_confidence,
+        analysis: aiResult, // Store full AI response as jsonb
+        analyzed_at: new Date().toISOString(),
       });
 
       if (dbError) {
         console.error("❌ Database insert error:", dbError);
         // Don't fail the request if DB insert fails
       } else {
-        console.log("✅ Scan saved to database");
-        
-        // Increment scan count for user
-        if (userId) {
-          try {
-            // Call the RPC function to increment scan count
-            const { data, error: incrementError } = await supabase.rpc('increment_scan_count', {
-              p_user_id: userId
-            });
-            
-            if (incrementError) {
-              // Check if error is because function doesn't exist (migration not run)
-              if (incrementError.message?.includes('function') && incrementError.message?.includes('does not exist')) {
-                console.warn("⚠️ increment_scan_count function not found. Please run migration_scan_limits.sql in Supabase.");
-              } else {
-                console.error("❌ Error incrementing scan count:", incrementError);
-              }
-              // Don't fail the request if increment fails
-            } else {
-              console.log("✅ Scan count incremented for user:", userId);
-            }
-          } catch (incrementErr: any) {
-            console.error("❌ Error calling increment_scan_count:", incrementErr?.message || incrementErr);
-            // Continue - don't fail the request
-          }
-        }
+        // Note: Scan count is auto-incremented by database trigger
+        console.log("✅ Scan saved successfully (profile stats updated by trigger)");
       }
     } catch (dbErr) {
       console.error("❌ Database error:", dbErr);

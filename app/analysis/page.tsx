@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import HybridScanFlow from '../components/HybridScanFlow';
+import StartFreeFlow, { StartFreeFlowData } from '../components/StartFreeFlow';
 import UpgradePrompt from '../components/UpgradePrompt';
 import ResultsDashboard from '../components/ResultsDashboard';
+import SkinAnalysisResults from '../components/SkinAnalysisResults';
 import { canAnalyze, incrementUsage, getUserUsage } from '@/lib/usage';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/hooks/useUser';
 
 interface AnalysisResult {
   score: number;
@@ -24,15 +27,38 @@ interface AnalysisResult {
   scientificNote?: string; // Technical details for footer
 }
 
+interface SkinAnalysisResult {
+  overallScore: number;
+  skinType: string;
+  issues: Array<{
+    type: string;
+    severity: 'mild' | 'moderate' | 'severe';
+    area: string;
+    count: number | null;
+  }>;
+  metrics: {
+    hydration: number;
+    oilControl: number;
+    poreHealth: number;
+    texture: number;
+    clarity: number;
+  };
+  recommendations: string[];
+  summary: string;
+}
+
 export default function AnalysisPage() {
   const router = useRouter();
+  const { user, loading: userLoading } = useUser();
   const [canProceed, setCanProceed] = useState(true);
   const [usageReason, setUsageReason] = useState('');
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [analysisCount, setAnalysisCount] = useState(0);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [skinAnalysisResult, setSkinAnalysisResult] = useState<SkinAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'syncing' | 'analyzing'>('syncing');
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   
   useEffect(() => {
     // Check usage limit (replace with real user ID from auth)
@@ -61,17 +87,178 @@ export default function AnalysisPage() {
     }
   };
 
-  // The HybridScanFlow component handles its own analysis flow
-  // This handler is called when the flow completes (after email submission)
-  const handleFlowComplete = async (data: { imageUrl: string; email?: string }) => {
-    // The hybrid flow already handles analysis internally
-    // This is just for any post-completion logic if needed
-    console.log('Flow completed with email:', data.email);
+  // Convert image URL to base64 for API
+  const imageUrlToBase64 = async (url: string): Promise<string> => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  // Extract ingredient names from recommendation text
+  const extractIngredient = (recommendation: string): string | null => {
+    const ingredients = [
+      'salicylic acid',
+      'niacinamide',
+      'hyaluronic acid',
+      'retinol',
+      'benzoyl peroxide',
+      'glycolic acid',
+      'vitamin c',
+      'ceramides',
+      'peptides',
+      'zinc',
+    ];
+
+    const lowerRec = recommendation.toLowerCase();
+    for (const ingredient of ingredients) {
+      if (lowerRec.includes(ingredient)) {
+        return ingredient;
+      }
+    }
+    return null;
+  };
+
+  // The StartFreeFlow component handles the camera capture and user data collection
+  // This handler is called when the flow completes with user's image and profile data
+  const handleFlowComplete = async (data: StartFreeFlowData) => {
+    // StartFreeFlow collects: imageUrl, age, skinType
+    if (!data.imageUrl) {
+      setAnalysisError('No image captured');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    setLoadingStage('analyzing');
+
+    try {
+      // Convert Supabase URL to base64
+      const base64Image = await imageUrlToBase64(data.imageUrl);
+
+      // Call the skin analysis API (works for anonymous users)
+      const response = await fetch('/api/analyze-skin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: base64Image,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis failed');
+      }
+
+      const result: SkinAnalysisResult = await response.json();
+
+      // Display results immediately (works for anonymous users)
+      setSkinAnalysisResult(result);
+
+      // If user is logged in, save to database
+      if (!user) {
+        console.log('Anonymous scan - results shown but not saved to database');
+        // User will be prompted to login when they want to save or view dashboard
+        return;
+      }
+
+      // Save scan to database with full analysis data
+      const { data: scan, error: scanError } = await supabase
+        .from('scans')
+        .insert({
+          user_id: user.id,
+          image_url: data.imageUrl,
+          status: 'completed',
+          overall_score: result.overallScore,
+          hydration_score: result.metrics.hydration,
+          oil_control_score: result.metrics.oilControl,
+          pore_health_score: result.metrics.poreHealth,
+          texture_score: result.metrics.texture,
+          clarity_score: result.metrics.clarity,
+          skin_type: result.skinType,
+          summary: result.summary,
+          analysis: result, // Store full GPT-4o response as jsonb
+          analyzed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (scanError) {
+        console.error('Failed to save scan:', scanError);
+        throw new Error('Failed to save scan results');
+      }
+
+      // Save issues to database
+      if (result.issues && result.issues.length > 0) {
+        const issues = result.issues.map((issue) => ({
+          scan_id: scan.id,
+          issue_type: issue.type.toLowerCase().replace(/\s+/g, '_'),
+          severity: issue.severity,
+          location: issue.area,
+          count: issue.count,
+        }));
+
+        const { error: issuesError } = await supabase
+          .from('scan_issues')
+          .insert(issues);
+
+        if (issuesError) {
+          console.error('Failed to save issues:', issuesError);
+        }
+      }
+
+      // Save recommendations to database
+      if (result.recommendations && result.recommendations.length > 0) {
+        const recommendations = result.recommendations.map((rec, i) => ({
+          scan_id: scan.id,
+          priority: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
+          title: rec,
+          description: rec,
+          // Extract ingredient from recommendation text if present
+          ingredient: extractIngredient(rec),
+        }));
+
+        const { error: recsError } = await supabase
+          .from('recommendations')
+          .insert(recommendations);
+
+        if (recsError) {
+          console.error('Failed to save recommendations:', recsError);
+        }
+      }
+
+      // Note: Profile stats (total_scans, current_streak) are auto-updated by database trigger
+      // Increment local usage counter for UI
+      incrementUsage(user.id);
+
+      // Display results
+      setSkinAnalysisResult(result);
+
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      setAnalysisError(error.message || 'Failed to analyze image. Please try again.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleScanAgain = () => {
+    setSkinAnalysisResult(null);
+    setAnalysisError(null);
   };
 
   if (showUpgradePrompt && !canProceed) {
     return (
-      <UpgradePrompt 
+      <UpgradePrompt
         variant="limit-reached"
         analysisCount={analysisCount}
         onClose={() => router.push('/')}
@@ -79,10 +266,81 @@ export default function AnalysisPage() {
     );
   }
 
-  // The HybridScanFlow component handles the entire flow internally
-  // including analysis, results preview, and email gate
+  // Show analysis results if available
+  if (skinAnalysisResult) {
+    return (
+      <SkinAnalysisResults
+        overallScore={skinAnalysisResult.overallScore}
+        skinType={skinAnalysisResult.skinType}
+        issues={skinAnalysisResult.issues}
+        metrics={skinAnalysisResult.metrics}
+        recommendations={skinAnalysisResult.recommendations}
+        summary={skinAnalysisResult.summary}
+        onScanAgain={handleScanAgain}
+      />
+    );
+  }
+
+  // Show error state if analysis failed
+  if (analysisError && !isAnalyzing) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        padding: '24px',
+        background: '#fafafa',
+      }}>
+        <div style={{
+          maxWidth: '500px',
+          background: 'white',
+          padding: '48px',
+          borderRadius: '16px',
+          textAlign: 'center',
+          border: '1px solid #eee',
+        }}>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '600',
+            marginBottom: '16px',
+            color: '#ef4444',
+          }}>
+            Analysis Failed
+          </h2>
+          <p style={{
+            fontSize: '15px',
+            color: '#666',
+            marginBottom: '32px',
+            lineHeight: 1.6,
+          }}>
+            {analysisError}
+          </p>
+          <button
+            onClick={handleScanAgain}
+            style={{
+              padding: '14px 32px',
+              background: '#0a0a0a',
+              border: 'none',
+              borderRadius: '100px',
+              color: 'white',
+              fontSize: '15px',
+              fontWeight: '500',
+              cursor: 'pointer',
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // The StartFreeFlow component handles the entire flow internally
+  // including enhanced camera with face detection, age/skin type collection
   return (
-    <HybridScanFlow
+    <StartFreeFlow
       onComplete={handleFlowComplete}
       onBack={() => router.push('/')}
     />
