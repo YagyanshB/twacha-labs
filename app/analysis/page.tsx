@@ -7,6 +7,8 @@ import UpgradePrompt from '../components/UpgradePrompt';
 import ResultsDashboard from '../components/ResultsDashboard';
 import SkinAnalysisResults from '../components/SkinAnalysisResults';
 import { canAnalyze, incrementUsage, getUserUsage } from '@/lib/usage';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/hooks/useUser';
 
 interface AnalysisResult {
   score: number;
@@ -47,6 +49,7 @@ interface SkinAnalysisResult {
 
 export default function AnalysisPage() {
   const router = useRouter();
+  const { user, loading: userLoading } = useUser();
   const [canProceed, setCanProceed] = useState(true);
   const [usageReason, setUsageReason] = useState('');
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -108,6 +111,12 @@ export default function AnalysisPage() {
       return;
     }
 
+    // Require user to be logged in to save results
+    if (!user) {
+      setAnalysisError('Please log in to save your scan results');
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysisError(null);
     setLoadingStage('analyzing');
@@ -133,11 +142,83 @@ export default function AnalysisPage() {
       }
 
       const result: SkinAnalysisResult = await response.json();
-      setSkinAnalysisResult(result);
 
-      // Increment usage counter
-      const userId = 'temp_user_id';
-      incrementUsage(userId);
+      // Save scan to database
+      const { data: scan, error: scanError } = await supabase
+        .from('scans')
+        .insert({
+          user_id: user.id,
+          image_url: data.imageUrl,
+          status: 'completed',
+          overall_score: result.overallScore,
+          hydration_score: result.metrics.hydration,
+          oil_control_score: result.metrics.oilControl,
+          pore_health_score: result.metrics.poreHealth,
+          texture_score: result.metrics.texture,
+          clarity_score: result.metrics.clarity,
+          skin_type: result.skinType,
+          summary: result.summary,
+          analyzed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (scanError) {
+        console.error('Failed to save scan:', scanError);
+        throw new Error('Failed to save scan results');
+      }
+
+      // Save issues to database
+      if (result.issues && result.issues.length > 0) {
+        const issues = result.issues.map((issue) => ({
+          scan_id: scan.id,
+          issue_type: issue.type.toLowerCase().replace(/\s+/g, '_'),
+          severity: issue.severity,
+          location: issue.area,
+          count: issue.count,
+        }));
+
+        const { error: issuesError } = await supabase
+          .from('scan_issues')
+          .insert(issues);
+
+        if (issuesError) {
+          console.error('Failed to save issues:', issuesError);
+        }
+      }
+
+      // Save recommendations to database
+      if (result.recommendations && result.recommendations.length > 0) {
+        const recommendations = result.recommendations.map((rec, i) => ({
+          scan_id: scan.id,
+          priority: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
+          title: rec,
+          description: rec,
+        }));
+
+        const { error: recsError } = await supabase
+          .from('recommendations')
+          .insert(recommendations);
+
+        if (recsError) {
+          console.error('Failed to save recommendations:', recsError);
+        }
+      }
+
+      // Update profile stats
+      const { error: profileError } = await supabase.rpc('increment_scan_count', {
+        p_user_id: user.id,
+      });
+
+      if (profileError) {
+        console.error('Failed to update profile stats:', profileError);
+      }
+
+      // Increment local usage counter
+      incrementUsage(user.id);
+
+      // Display results
+      setSkinAnalysisResult(result);
 
     } catch (error: any) {
       console.error('Analysis error:', error);
