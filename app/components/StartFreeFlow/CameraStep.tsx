@@ -5,6 +5,15 @@ import { Camera, Upload, Check, Image as ImageIcon, X, Loader2, AlertCircle } fr
 import Webcam from 'react-webcam';
 import { uploadImageToSupabase } from '@/lib/image-upload';
 
+// YCbCr-based skin color detection (works for all skin tones)
+function isSkinColor(r: number, g: number, b: number): boolean {
+  const y = 0.299 * r + 0.587 * g + 0.114 * b;
+  const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+  const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+
+  return cr > 135 && cr < 180 && cb > 85 && cb < 135 && y > 80;
+}
+
 interface CameraStepProps {
   onCapture: (imageUrl: string) => void;
   onBack: () => void;
@@ -17,7 +26,15 @@ interface ValidationState {
   centered: boolean;
   goodLighting: boolean;
   correctDistance: boolean;
+  holdingStill: boolean;
   statusMessage: string;
+}
+
+interface FacePosition {
+  x: number;
+  y: number;
+  width: number;
+  timestamp: number;
 }
 
 export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
@@ -31,6 +48,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
     centered: false,
     goodLighting: false,
     correctDistance: false,
+    holdingStill: false,
     statusMessage: 'Initializing camera...',
   });
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -38,6 +56,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
   
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,8 +66,9 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
   const modelRef = useRef<any>(null);
   const animationFrameRef = useRef<number | null>(null);
   const validationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const facePositionHistoryRef = useRef<FacePosition[]>([]);
 
-  const allConditionsMet = validation.faceDetected && validation.centered && validation.goodLighting && validation.correctDistance;
+  const allConditionsMet = validation.faceDetected && validation.centered && validation.goodLighting && validation.correctDistance && validation.holdingStill;
 
   const handleImageUpload = async (imageData: string | File) => {
     setIsUploading(true);
@@ -129,11 +149,11 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
 
     // Draw video frame to tiny 10x10 canvas
     ctx.drawImage(video, 0, 0, 10, 10);
-    
+
     // Get pixel data
     const imageData = ctx.getImageData(0, 0, 10, 10);
     const pixels = imageData.data;
-    
+
     // Calculate average brightness (RGB average)
     let totalBrightness = 0;
     for (let i = 0; i < pixels.length; i += 4) {
@@ -143,11 +163,46 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       const brightness = (r + g + b) / 3;
       totalBrightness += brightness;
     }
-    
+
     const averageBrightness = totalBrightness / (pixels.length / 4);
-    
-    // Good lighting: between 40 and 200
-    return averageBrightness >= 40 && averageBrightness <= 200;
+
+    // Good lighting: between 80 and 200 (updated to match requirements)
+    return averageBrightness >= 80 && averageBrightness <= 200;
+  }, []);
+
+  // Check if user is holding still (5th condition)
+  const checkStability = useCallback((currentPosition: FacePosition): boolean => {
+    const now = Date.now();
+    const history = facePositionHistoryRef.current;
+
+    // Add current position to history
+    history.push(currentPosition);
+
+    // Remove positions older than 1.5 seconds
+    const recentHistory = history.filter(pos => now - pos.timestamp < 1500);
+    facePositionHistoryRef.current = recentHistory;
+
+    // Need at least 1 second of data (assuming ~6-7 samples at 150ms intervals)
+    if (recentHistory.length < 6) {
+      return false;
+    }
+
+    // Check if all recent positions are within acceptable movement threshold
+    const firstPos = recentHistory[0];
+    const movementThreshold = 15; // pixels
+
+    for (const pos of recentHistory) {
+      const distanceX = Math.abs(pos.x - firstPos.x);
+      const distanceY = Math.abs(pos.y - firstPos.y);
+      const widthChange = Math.abs(pos.width - firstPos.width);
+
+      // If any position differs too much, user is not stable
+      if (distanceX > movementThreshold || distanceY > movementThreshold || widthChange > movementThreshold) {
+        return false;
+      }
+    }
+
+    return true;
   }, []);
 
   // Face detection and validation - Improved for real-time detection
@@ -171,6 +226,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
         faceDetected: false,
         centered: false,
         correctDistance: false,
+        holdingStill: false,
         goodLighting: lightingGood,
         statusMessage: 'Loading face detection...',
       }));
@@ -182,11 +238,14 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       const predictions = await modelRef.current.estimateFaces(video, false);
       
       if (predictions.length === 0) {
+        // Clear position history when no face detected
+        facePositionHistoryRef.current = [];
         setValidation(prev => ({
           ...prev,
           faceDetected: false,
           centered: false,
           correctDistance: false,
+          holdingStill: false,
           goodLighting: lightingGood,
           statusMessage: 'Position your face in the frame',
         }));
@@ -201,25 +260,34 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
       const faceHeight = bottomRight[1] - boundingBox[1];
       const faceCenterX = boundingBox[0] + faceWidth / 2;
       const faceCenterY = boundingBox[1] + faceHeight / 2;
-      
+
       const videoWidth = video.videoWidth;
       const videoHeight = video.videoHeight;
-      
-      // Centered check: face center within 35% of viewport center (very lenient)
+
+      // Centered check: face center within 15% of viewport center
       const centerX = videoWidth / 2;
       const centerY = videoHeight / 2;
-      const toleranceX = videoWidth * 0.35;
-      const toleranceY = videoHeight * 0.35;
-      
-      const isCentered = 
+      const toleranceX = videoWidth * 0.15;
+      const toleranceY = videoHeight * 0.15;
+
+      const isCentered =
         Math.abs(faceCenterX - centerX) < toleranceX &&
         Math.abs(faceCenterY - centerY) < toleranceY;
+
+      // Distance check: face height should be 30-70% of frame height
+      const faceHeightPercent = (faceHeight / videoHeight) * 100;
+      const correctDistance = faceHeightPercent >= 30 && faceHeightPercent <= 70;
+
+      // Stability check: holding still for 1+ second
+      const currentPosition: FacePosition = {
+        x: faceCenterX,
+        y: faceCenterY,
+        width: faceWidth,
+        timestamp: Date.now(),
+      };
+      const isStable = checkStability(currentPosition);
       
-      // Distance check: face width should be 35-80% of canvas width (very lenient for better UX)
-      const faceWidthPercent = (faceWidth / videoWidth) * 100;
-      const correctDistance = faceWidthPercent >= 35 && faceWidthPercent <= 80;
-      
-      // Determine status message
+      // Determine status message (prioritize most critical feedback)
       let statusMessage = 'All conditions met!';
       if (!lightingGood) {
         const canvas = lightingCanvasRef.current;
@@ -234,28 +302,31 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
               totalBrightness += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
             }
             const avg = totalBrightness / (pixels.length / 4);
-            statusMessage = avg < 40 ? 'Too dark - Find a light source' : 'Too bright - Reduce lighting';
+            statusMessage = avg < 80 ? 'Find better lighting' : 'Too bright - Reduce lighting';
           }
         }
       } else if (!isCentered) {
-        statusMessage = 'Center your face in the frame';
+        statusMessage = 'Center your face in the oval';
       } else if (!correctDistance) {
-        statusMessage = faceWidthPercent < 35 
-          ? 'Move closer to the camera' 
+        statusMessage = faceHeightPercent < 30
+          ? 'Move closer to the camera'
           : 'Move further from the camera';
+      } else if (!isStable) {
+        statusMessage = 'Hold still...';
       }
-      
+
       setValidation({
         faceDetected: true,
         centered: isCentered,
         goodLighting: lightingGood,
         correctDistance: correctDistance,
+        holdingStill: isStable,
         statusMessage,
       });
     } catch (error) {
       console.error('Validation error:', error);
     }
-  }, [checkLighting]);
+  }, [checkLighting, checkStability]);
 
   // Load BlazeFace model dynamically
   useEffect(() => {
@@ -399,14 +470,49 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
     };
   }, [mode, validateFrame]);
 
+  // Auto-capture countdown when all conditions are met
+  useEffect(() => {
+    if (typeof window === 'undefined' || mode !== 'camera' || capturedImage || isUploading) {
+      return;
+    }
+
+    // Start countdown when all conditions met
+    if (allConditionsMet && countdown === null) {
+      setCountdown(3);
+    }
+
+    // Cancel countdown if conditions no longer met
+    if (!allConditionsMet && countdown !== null) {
+      setCountdown(null);
+    }
+
+    // Countdown timer
+    if (countdown !== null && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+
+    // Auto-capture when countdown reaches 0
+    if (countdown === 0) {
+      handleCapture();
+      setCountdown(null);
+    }
+  }, [allConditionsMet, countdown, mode, capturedImage, isUploading]);
+
   const handleRetake = () => {
     setCapturedImage(null);
     setPreviewImage(null);
+    setCountdown(null); // Clear countdown
+    facePositionHistoryRef.current = []; // Clear position history
     setValidation({
       faceDetected: false,
       centered: false,
       goodLighting: false,
       correctDistance: false,
+      holdingStill: false,
       statusMessage: 'Position your face in the frame',
     });
   };
@@ -493,7 +599,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                   />
                   
                   {/* Status Message Overlay */}
-                  {validation.statusMessage && (
+                  {validation.statusMessage && !countdown && (
                     <div className="status-message-overlay">
                       <div className="status-message-content">
                         {!allConditionsMet && (
@@ -503,10 +609,26 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                       </div>
                     </div>
                   )}
-                  
+
+                  {/* Countdown Overlay */}
+                  {countdown !== null && countdown > 0 && (
+                    <div className="countdown-overlay">
+                      <div className="countdown-number">{countdown}</div>
+                      <div className="countdown-text">Get ready!</div>
+                    </div>
+                  )}
+
                   {/* Face Guide Overlay */}
                   <div className="face-guide">
-                    <div className="face-guide-oval"></div>
+                    <div
+                      className={`face-guide-oval ${
+                        !validation.faceDetected
+                          ? 'no-face'
+                          : allConditionsMet
+                            ? 'ready'
+                            : 'conditions-not-met'
+                      }`}
+                    ></div>
                   </div>
                 </>
               ) : (
@@ -581,12 +703,16 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
               checked={validation.centered}
             />
             <ChecklistItem
+              label="Good distance"
+              checked={validation.correctDistance}
+            />
+            <ChecklistItem
               label="Good lighting"
               checked={validation.goodLighting}
             />
             <ChecklistItem
-              label="Correct distance"
-              checked={validation.correctDistance}
+              label="Holding still"
+              checked={validation.holdingStill}
             />
           </div>
         )}
