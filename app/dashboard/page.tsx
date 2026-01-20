@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { useScanAllowance } from '@/hooks/useScanAllowance';
+import { useRealtimeScores } from '@/hooks/useRealtimeScores';
 import ScanButton from '@/app/components/ScanButton';
 import LowScansWarning from '@/app/components/LowScansWarning';
 import UpgradeModal from '@/app/components/UpgradeModal';
@@ -17,6 +18,14 @@ export default function TwachaDashboard() {
   const { user, loading, signOut } = useUser();
   const router = useRouter();
   const { scansUsed, scansRemaining, isPremium, canScan, limit, refresh } = useScanAllowance();
+  const {
+    overallScore,
+    overallChange,
+    metrics,
+    stats,
+    detectedIssues,
+    isLoading: scoresLoading,
+  } = useRealtimeScores(user?.id);
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedScan, setSelectedScan] = useState(null);
   const [mounted, setMounted] = useState(false);
@@ -51,7 +60,7 @@ export default function TwachaDashboard() {
     router.push('/analysis');
   };
 
-  if (loading || !user) {
+  if (loading || !user || scoresLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-gray-600 font-light">Loading...</div>
@@ -59,56 +68,46 @@ export default function TwachaDashboard() {
     );
   }
 
-  // Mock user data - replace with real data from API
+  // Real user data from hooks
   const userData = {
     name: user.email?.split('@')[0] || 'User',
-    memberSince: new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-    totalScans: 8,
-    streak: 12, // days
+    memberSince: stats.memberSince || new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+    totalScans: stats.totalScans || 0,
+    streak: stats.currentStreak || 0,
   };
 
-  // Current skin score and metrics
+  // Real skin score and metrics from latest scan
   const currentScore = {
-    overall: 72,
-    previousOverall: 68,
+    overall: overallScore || 0,
+    previousOverall: (overallScore - overallChange) || 0,
     breakdown: {
-      hydration: { score: 68, status: 'improving', change: +5 },
-      oilControl: { score: 74, status: 'stable', change: 0 },
-      poreHealth: { score: 65, status: 'needs-attention', change: -2 },
-      texture: { score: 78, status: 'improving', change: +3 },
-      clarity: { score: 75, status: 'stable', change: +1 },
+      hydration: {
+        score: metrics.hydration.score,
+        status: metrics.hydration.change > 0 ? 'improving' : metrics.hydration.change < 0 ? 'needs-attention' : 'stable',
+        change: metrics.hydration.change
+      },
+      oilControl: {
+        score: metrics.oilControl.score,
+        status: metrics.oilControl.change > 0 ? 'improving' : metrics.oilControl.change < 0 ? 'needs-attention' : 'stable',
+        change: metrics.oilControl.change
+      },
+      poreHealth: {
+        score: metrics.poreHealth.score,
+        status: metrics.poreHealth.change > 0 ? 'improving' : metrics.poreHealth.change < 0 ? 'needs-attention' : 'stable',
+        change: metrics.poreHealth.change
+      },
+      texture: {
+        score: metrics.texture.score,
+        status: metrics.texture.change > 0 ? 'improving' : metrics.texture.change < 0 ? 'needs-attention' : 'stable',
+        change: metrics.texture.change
+      },
+      clarity: {
+        score: metrics.clarity.score,
+        status: metrics.clarity.change > 0 ? 'improving' : metrics.clarity.change < 0 ? 'needs-attention' : 'stable',
+        change: metrics.clarity.change
+      },
     }
   };
-
-  // Detected issues from latest scan
-  const detectedIssues = [
-    {
-      id: 1,
-      type: 'blackheads',
-      severity: 'moderate',
-      location: 'T-zone (nose, forehead)',
-      count: 12,
-      trend: 'decreasing',
-      previousCount: 15,
-    },
-    {
-      id: 2,
-      type: 'enlarged-pores',
-      severity: 'mild',
-      location: 'Nose, cheeks',
-      count: null,
-      trend: 'stable',
-      affectedArea: '15%',
-    },
-    {
-      id: 3,
-      type: 'oily-zones',
-      severity: 'moderate',
-      location: 'T-zone',
-      trend: 'improving',
-      sebumLevel: 'high',
-    },
-  ];
 
   // Scan history for progress tracking
   const scanHistory = [
@@ -292,48 +291,85 @@ export default function TwachaDashboard() {
         {/* OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div style={{ animation: 'fade-in 0.3s ease-out' }}>
-            {/* Score Cards Row */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '16px',
-              marginBottom: '24px',
-            }}>
-              {/* Main Skin Score Card */}
+            {/* Show welcome message if no scans yet */}
+            {overallScore === 0 && stats.totalScans === 0 ? (
               <div style={{
                 background: 'white',
                 border: '1px solid #eee',
                 borderRadius: '16px',
-                padding: '28px',
-                gridColumn: 'span 1',
+                padding: '48px',
+                textAlign: 'center',
+                marginBottom: '24px',
               }}>
-                <div style={{ fontSize: '13px', color: '#888', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Your Skin Score
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', marginBottom: '12px' }}>
-                  <span style={{
-                    fontSize: '64px',
-                    fontWeight: '700',
-                    letterSpacing: '-0.03em',
-                    lineHeight: 1,
-                    color: getScoreColor(currentScore.overall),
-                  }}>
-                    {currentScore.overall}
-                  </span>
-                  <span style={{ fontSize: '24px', color: '#ccc', marginBottom: '8px' }}>/100</span>
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  color: '#22c55e',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}>
-                  <span>↑</span>
-                  <span>+{currentScore.overall - currentScore.previousOverall} from last scan</span>
-                </div>
+                <div style={{ fontSize: '64px', marginBottom: '24px' }}>👋</div>
+                <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
+                  Welcome to Twacha Labs
+                </h2>
+                <p style={{ color: '#666', fontSize: '15px', marginBottom: '32px', lineHeight: 1.6 }}>
+                  Start your skin health journey by taking your first scan. Our AI will analyze your skin and provide personalized recommendations.
+                </p>
+                <button
+                  onClick={handleNewScan}
+                  style={{
+                    padding: '16px 32px',
+                    background: '#0a0a0a',
+                    border: 'none',
+                    borderRadius: '100px',
+                    color: 'white',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Take Your First Scan
+                </button>
               </div>
+            ) : (
+              <>
+                {/* Score Cards Row */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '16px',
+                  marginBottom: '24px',
+                }}>
+                  {/* Main Skin Score Card */}
+                  <div style={{
+                    background: 'white',
+                    border: '1px solid #eee',
+                    borderRadius: '16px',
+                    padding: '28px',
+                    gridColumn: 'span 1',
+                  }}>
+                    <div style={{ fontSize: '13px', color: '#888', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Your Skin Score
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', marginBottom: '12px' }}>
+                      <span style={{
+                        fontSize: '64px',
+                        fontWeight: '700',
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1,
+                        color: getScoreColor(currentScore.overall),
+                      }}>
+                        {currentScore.overall}
+                      </span>
+                      <span style={{ fontSize: '24px', color: '#ccc', marginBottom: '8px' }}>/100</span>
+                    </div>
+                    {overallChange !== 0 && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: overallChange > 0 ? '#22c55e' : '#ef4444',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                      }}>
+                        <span>{overallChange > 0 ? '↑' : '↓'}</span>
+                        <span>{overallChange > 0 ? '+' : ''}{overallChange} from last scan</span>
+                      </div>
+                    )}
+                  </div>
 
               {/* Quick Stats */}
               <div style={{
@@ -409,6 +445,9 @@ export default function TwachaDashboard() {
               </div>
             </div>
 
+            </>
+            )}
+
             {/* Quick Actions */}
             <div style={{
               display: 'grid',
@@ -481,116 +520,84 @@ export default function TwachaDashboard() {
             </div>
 
             <div style={{ display: 'grid', gap: '16px' }}>
-              {detectedIssues.map(issue => {
-                const badge = getSeverityBadge(issue.severity);
-                return (
-                  <div
-                    key={issue.id}
+              {detectedIssues.length === 0 ? (
+                <div style={{
+                  background: 'white',
+                  border: '1px solid #eee',
+                  borderRadius: '16px',
+                  padding: '48px',
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎉</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+                    No issues detected yet
+                  </h3>
+                  <p style={{ color: '#888', fontSize: '14px' }}>
+                    Complete your first scan to see detailed skin analysis
+                  </p>
+                  <button
+                    onClick={handleNewScan}
                     style={{
-                      background: 'white',
-                      border: '1px solid #eee',
-                      borderRadius: '16px',
-                      padding: '24px',
+                      marginTop: '24px',
+                      padding: '12px 24px',
+                      background: '#0a0a0a',
+                      border: 'none',
+                      borderRadius: '100px',
+                      color: 'white',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', textTransform: 'capitalize' }}>
-                            {issue.type.replace('-', ' ')}
-                          </h3>
-                          <span style={{
-                            padding: '4px 10px',
-                            background: badge.bg,
-                            color: badge.color,
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            borderRadius: '100px',
-                          }}>
-                            {badge.text}
-                          </span>
-                        </div>
-                        <p style={{ color: '#666', fontSize: '14px' }}>
-                          Location: {issue.location}
-                        </p>
-                      </div>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        color: getTrendColor(issue.trend === 'decreasing' ? 'improving' : issue.trend === 'increasing' ? 'needs-attention' : 'stable'),
-                        fontSize: '13px',
-                        fontWeight: '500',
-                      }}>
-                        {getTrendIcon(issue.trend === 'decreasing' ? 'improving' : issue.trend === 'increasing' ? 'needs-attention' : 'stable')}
-                        {issue.trend}
-                      </div>
-                    </div>
-
-                    {/* Issue-specific details */}
-                    {issue.type === 'blackheads' && (
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '16px',
-                        padding: '16px',
-                        background: '#fafafa',
-                        borderRadius: '12px',
-                      }}>
+                    Start Your First Scan
+                  </button>
+                </div>
+              ) : (
+                detectedIssues.map((issue, idx) => {
+                  const badge = getSeverityBadge(issue.severity);
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'white',
+                        border: '1px solid #eee',
+                        borderRadius: '16px',
+                        padding: '24px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                         <div>
-                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Count</div>
-                          <div style={{ fontSize: '24px', fontWeight: '600' }}>{issue.count}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Previous</div>
-                          <div style={{ fontSize: '24px', fontWeight: '600', color: '#888' }}>{issue.previousCount}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Change</div>
-                          <div style={{ fontSize: '24px', fontWeight: '600', color: '#22c55e' }}>
-                            -{issue.previousCount! - issue.count!}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', textTransform: 'capitalize' }}>
+                              {issue.issue_type.replace(/_/g, ' ')}
+                            </h3>
+                            <span style={{
+                              padding: '4px 10px',
+                              background: badge.bg,
+                              color: badge.color,
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              borderRadius: '100px',
+                            }}>
+                              {badge.text}
+                            </span>
                           </div>
+                          <p style={{ color: '#666', fontSize: '14px' }}>
+                            Location: {issue.location}
+                          </p>
                         </div>
                       </div>
-                    )}
 
-                    {issue.type === 'enlarged-pores' && (
+                    {/* Issue count if available */}
+                    {issue.count && (
                       <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, 1fr)',
-                        gap: '16px',
                         padding: '16px',
                         background: '#fafafa',
                         borderRadius: '12px',
+                        marginTop: '12px',
                       }}>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Affected Area</div>
-                          <div style={{ fontSize: '24px', fontWeight: '600' }}>{issue.affectedArea}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Status</div>
-                          <div style={{ fontSize: '18px', fontWeight: '500', textTransform: 'capitalize' }}>{issue.trend}</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {issue.type === 'oily-zones' && (
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, 1fr)',
-                        gap: '16px',
-                        padding: '16px',
-                        background: '#fafafa',
-                        borderRadius: '12px',
-                      }}>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Sebum Level</div>
-                          <div style={{ fontSize: '18px', fontWeight: '500', textTransform: 'capitalize' }}>{issue.sebumLevel}</div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Trend</div>
-                          <div style={{ fontSize: '18px', fontWeight: '500', textTransform: 'capitalize', color: '#22c55e' }}>{issue.trend}</div>
-                        </div>
+                        <div style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>Count</div>
+                        <div style={{ fontSize: '24px', fontWeight: '600' }}>{issue.count}</div>
                       </div>
                     )}
 
@@ -607,14 +614,15 @@ export default function TwachaDashboard() {
                       alignItems: 'center',
                       gap: '6px',
                     }}>
-                      View treatment options
+                      View details
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M5 12h14M12 5l7 7-7 7"/>
                       </svg>
                     </button>
                   </div>
                 );
-              })}
+              })
+              )}
             </div>
 
             {/* Face Map Visualization */}
