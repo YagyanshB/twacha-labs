@@ -136,18 +136,27 @@ export default function MacroLensComparison() {
             <div style={{
               position: 'absolute',
               inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}>
-              {/* Simulated blurry skin - use actual images in production */}
+              {/* Blurry background layer */}
               <div style={{
-                width: '100%',
-                height: '100%',
+                position: 'absolute',
+                inset: 0,
                 background: 'linear-gradient(135deg, #d4a574 0%, #c4956a 100%)',
                 filter: 'blur(2px)',
-                opacity: 0.9,
               }} />
+
+              {/* Very faint, barely visible dots */}
+              <svg style={{ position: 'absolute', inset: 0, opacity: 0.15 }} viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+                {[...Array(20)].map((_, i) => (
+                  <circle
+                    key={i}
+                    cx={50 + Math.random() * 300}
+                    cy={50 + Math.random() * 300}
+                    r={4 + Math.random() * 3}
+                    fill="#8b7355"
+                  />
+                ))}
+              </svg>
 
               {/* Before Label */}
               <div style={{
@@ -202,30 +211,115 @@ export default function MacroLensComparison() {
               inset: 0,
               clipPath: `inset(0 0 0 ${sliderPosition}%)`,
             }}>
-              {/* Simulated detailed macro view - use actual images in production */}
+              {/* Clear, sharp background with texture */}
               <div style={{
-                width: '100%',
-                height: '100%',
-                background: 'linear-gradient(135deg, #ddb896 0%, #c9a07a 100%)',
-                position: 'relative',
-              }}>
-                {/* Simulated blackhead dots for demo */}
-                {activeDemo === 'blackheads' && [...Array(12)].map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: 'absolute',
-                      left: `${20 + (i % 4) * 20}%`,
-                      top: `${25 + Math.floor(i / 4) * 25}%`,
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: '#3d3530',
-                      boxShadow: 'inset 2px 2px 4px rgba(255,255,255,0.2)',
-                    }}
+                position: 'absolute',
+                inset: 0,
+                background: `
+                  radial-gradient(circle at 30% 40%, rgba(180, 140, 100, 0.3) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 60%, rgba(180, 140, 100, 0.2) 0%, transparent 40%),
+                  linear-gradient(135deg, #ddb896 0%, #c9a07a 100%)
+                `,
+              }} />
+
+              {/* SVG layer with all skin details */}
+              <svg style={{ position: 'absolute', inset: 0 }} viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice">
+                {/* Fine texture lines */}
+                {[...Array(30)].map((_, i) => (
+                  <line
+                    key={`line-${i}`}
+                    x1={Math.random() * 400}
+                    y1={Math.random() * 400}
+                    x2={Math.random() * 400}
+                    y2={Math.random() * 400}
+                    stroke="#c4956a"
+                    strokeWidth="0.5"
+                    opacity="0.3"
                   />
                 ))}
-              </div>
+
+                {/* Visible pores - small circles everywhere */}
+                {[...Array(60)].map((_, i) => {
+                  const x = 30 + Math.random() * 340;
+                  const y = 30 + Math.random() * 340;
+                  const size = 2 + Math.random() * 3;
+                  return (
+                    <g key={`pore-${i}`}>
+                      <circle cx={x} cy={y} r={size + 1} fill="#b8967a" />
+                      <circle cx={x} cy={y} r={size * 0.7} fill="#a88060" />
+                    </g>
+                  );
+                })}
+
+                {/* BLACKHEADS - clearly visible dark dots */}
+                {activeDemo === 'blackheads' && [
+                  { x: 100, y: 120, size: 8 },
+                  { x: 150, y: 180, size: 7 },
+                  { x: 200, y: 140, size: 9 },
+                  { x: 180, y: 220, size: 6 },
+                  { x: 250, y: 160, size: 8 },
+                  { x: 130, y: 260, size: 7 },
+                  { x: 220, y: 200, size: 8 },
+                  { x: 280, y: 180, size: 6 },
+                  { x: 170, y: 150, size: 7 },
+                  { x: 300, y: 220, size: 8 },
+                  { x: 240, y: 280, size: 7 },
+                  { x: 120, y: 200, size: 6 },
+                ].map((dot, i) => (
+                  <g key={`blackhead-${i}`}>
+                    <circle cx={dot.x} cy={dot.y} r={dot.size + 3} fill="#c9a07a" />
+                    <circle cx={dot.x} cy={dot.y} r={dot.size} fill="#2d2520" />
+                    <circle cx={dot.x - 2} cy={dot.y - 2} r={dot.size * 0.35} fill="#4a4035" />
+                  </g>
+                ))}
+
+                {/* ENLARGED PORES - for pore analysis mode */}
+                {activeDemo === 'pores' && [
+                  { x: 120, y: 130, size: 12 },
+                  { x: 180, y: 170, size: 14 },
+                  { x: 240, y: 140, size: 11 },
+                  { x: 150, y: 230, size: 13 },
+                  { x: 280, y: 190, size: 12 },
+                  { x: 200, y: 260, size: 10 },
+                  { x: 100, y: 190, size: 11 },
+                  { x: 260, y: 250, size: 12 },
+                ].map((pore, i) => (
+                  <g key={`enlarged-pore-${i}`}>
+                    <circle cx={pore.x} cy={pore.y} r={pore.size} fill="#c4956a" />
+                    <circle cx={pore.x} cy={pore.y} r={pore.size * 0.7} fill="#b8866a" />
+                    <circle cx={pore.x} cy={pore.y} r={pore.size * 0.4} fill="#a8765a" />
+                  </g>
+                ))}
+
+                {/* TEXTURE ISSUES - for skin texture mode */}
+                {activeDemo === 'texture' && (
+                  <>
+                    <rect x="100" y="120" width="80" height="60" rx="8" fill="url(#texturePattern)" opacity="0.6" />
+                    <rect x="220" y="180" width="70" height="50" rx="8" fill="url(#texturePattern)" opacity="0.5" />
+                    <rect x="150" y="250" width="90" height="45" rx="8" fill="url(#texturePattern)" opacity="0.55" />
+
+                    {[...Array(15)].map((_, i) => (
+                      <circle
+                        key={`bump-${i}`}
+                        cx={120 + Math.random() * 160}
+                        cy={130 + Math.random() * 140}
+                        r={3 + Math.random() * 2}
+                        fill="#d4a574"
+                        stroke="#c4956a"
+                        strokeWidth="1"
+                      />
+                    ))}
+                  </>
+                )}
+
+                {/* Pattern definition for texture */}
+                <defs>
+                  <pattern id="texturePattern" width="6" height="6" patternUnits="userSpaceOnUse">
+                    <circle cx="2" cy="2" r="1" fill="#c4956a" />
+                    <circle cx="5" cy="5" r="0.8" fill="#b8967a" />
+                  </pattern>
+                </defs>
+              </svg>
 
               {/* After Label */}
               <div style={{
