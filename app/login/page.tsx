@@ -1,368 +1,381 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
-// Twacha Labs - Minimal Login Page
-// Matches the clean, light aesthetic of the landing page
+export default function LoginPage() {
+  const router = useRouter();
 
-export default function TwachaLogin() {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSent, setIsSent] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  // Google Sign In
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email) return
-    
-    setIsLoading(true)
-    
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
-      if (error) throw error
-
-      setIsLoading(false)
-      setIsSent(true)
-    } catch (error: any) {
-      setIsLoading(false)
-      // You can add error handling here if needed
-      console.error('Login error:', error)
+    if (error) {
+      setError(error.message);
+      setLoading(false);
     }
-  }
+  };
 
-  const handleResend = async () => {
-    if (!email) return
-    setIsLoading(true)
-    
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      })
+  // Email/Password Sign In
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-      if (error) throw error
-    } catch (error: any) {
-      console.error('Resend error:', error)
-    } finally {
-      setIsLoading(false)
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    } else {
+      router.push('/dashboard');
     }
-  }
+  };
+
+  // Email/Password Sign Up
+  const handleEmailSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage('Check your email to confirm your account!');
+    }
+    setLoading(false);
+  };
+
+  // Magic Link (keep as backup option)
+  const handleMagicLink = async () => {
+    if (!email) {
+      setError('Please enter your email first');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage('Check your email for the magic link!');
+    }
+    setLoading(false);
+  };
 
   return (
     <div style={{
       minHeight: '100vh',
       background: '#fafafa',
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-      color: '#0a0a0a',
       display: 'flex',
-      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+      fontFamily: "'Inter', -apple-system, sans-serif",
     }}>
-      {/* Header */}
-      <header style={{
-        padding: '20px 40px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+      <div style={{
+        width: '100%',
+        maxWidth: '420px',
       }}>
-        <Link 
-          href="/"
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '10px',
-            textDecoration: 'none',
-            color: '#0a0a0a',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.7 }}>
+        {/* Logo */}
+        <Link href="/" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          marginBottom: '32px',
+          textDecoration: 'none',
+          color: '#0a0a0a',
+        }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <circle cx="6" cy="6" r="2" fill="#0a0a0a"/>
             <circle cx="18" cy="6" r="2" fill="#0a0a0a"/>
             <circle cx="6" cy="18" r="2" fill="#0a0a0a"/>
             <circle cx="18" cy="18" r="2" fill="#0a0a0a"/>
             <circle cx="12" cy="12" r="2" fill="#0a0a0a"/>
           </svg>
-          <span style={{
-            fontSize: '17px',
-            fontWeight: '600',
-            letterSpacing: '-0.01em',
-          }}>Twacha Labs</span>
+          <span style={{ fontSize: '20px', fontWeight: '600' }}>Twacha Labs</span>
         </Link>
-      </header>
 
-      {/* Main Content */}
-      <main style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 24px',
-        opacity: mounted ? 1 : 0,
-        transform: mounted ? 'translateY(0)' : 'translateY(20px)',
-        transition: 'all 0.5s ease-out',
-      }}>
-        {!isSent ? (
-          <div style={{
-            width: '100%',
-            maxWidth: '360px',
+        {/* Card */}
+        <div style={{
+          background: 'white',
+          borderRadius: '20px',
+          padding: '32px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+        }}>
+          <h1 style={{
+            fontSize: '24px',
+            fontWeight: '600',
             textAlign: 'center',
+            marginBottom: '8px',
           }}>
-            <h1 style={{
-              fontSize: '32px',
-              fontWeight: '600',
-              letterSpacing: '-0.02em',
-              marginBottom: '12px',
-              color: '#0a0a0a',
-            }}>
-              Welcome back
-            </h1>
-            
-            <p style={{
+            {mode === 'login' ? 'Welcome back' : 'Create account'}
+          </h1>
+          <p style={{
+            color: '#888',
+            textAlign: 'center',
+            marginBottom: '28px',
+            fontSize: '15px',
+          }}>
+            {mode === 'login'
+              ? 'Sign in to continue to your dashboard'
+              : 'Start your skin health journey'}
+          </p>
+
+          {/* Google Sign In */}
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: 'white',
+              border: '1px solid #e5e5e5',
+              borderRadius: '12px',
               fontSize: '15px',
-              color: '#888',
-              marginBottom: '40px',
-              lineHeight: 1.5,
-            }}>
-              Enter your email to receive a sign-in link.
-            </p>
-
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '16px', textAlign: 'left' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  color: '#666',
-                  marginBottom: '8px',
-                }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  disabled={isLoading}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    background: 'white',
-                    border: '1px solid #e5e5e5',
-                    borderRadius: '10px',
-                    color: '#0a0a0a',
-                    fontSize: '15px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#0a0a0a'}
-                  onBlur={e => e.target.style.borderColor = '#e5e5e5'}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || !email}
-                style={{
-                  width: '100%',
-                  padding: '14px 32px',
-                  background: isLoading ? '#666' : '#0a0a0a',
-                  border: 'none',
-                  borderRadius: '100px',
-                  color: 'white',
-                  fontSize: '15px',
-                  fontWeight: '500',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                }}
-              >
-                {isLoading ? (
-                  <>
-                    <svg 
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2"
-                      style={{ animation: 'spin 1s linear infinite' }}
-                    >
-                      <path d="M21 12a9 9 0 11-6.219-8.56" />
-                    </svg>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    Continue
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </>
-                )}
-              </button>
-            </form>
-
-            <p style={{
-              marginTop: '24px',
-              fontSize: '12px',
-              color: '#b0b0b0',
-              lineHeight: 1.5,
-            }}>
-              By continuing, you agree to our{' '}
-              <Link href="/privacy" style={{ color: '#888', textDecoration: 'underline' }}>
-                Privacy Policy
-              </Link>
-            </p>
-          </div>
-        ) : (
-          <div style={{
-            width: '100%',
-            maxWidth: '360px',
-            textAlign: 'center',
-            animation: 'fadeIn 0.4s ease-out',
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              margin: '0 auto 24px',
-              borderRadius: '50%',
-              background: '#f5f5f5',
+              fontWeight: '500',
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-            }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
-                <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2"/>
-                <path d="M22 6v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6"/>
-                <path d="M22 6l-10 7L2 6"/>
-              </svg>
+              gap: '10px',
+              marginBottom: '20px',
+              transition: 'all 0.2s',
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          {/* Divider */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '20px',
+          }}>
+            <div style={{ flex: 1, height: '1px', background: '#eee' }} />
+            <span style={{ color: '#888', fontSize: '13px' }}>or</span>
+            <div style={{ flex: 1, height: '1px', background: '#eee' }} />
+          </div>
+
+          {/* Email/Password Form */}
+          <form onSubmit={mode === 'login' ? handleEmailSignIn : handleEmailSignUp}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#666', marginBottom: '6px' }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  boxSizing: 'border-box',
+                }}
+              />
             </div>
-            
-            <h1 style={{
-              fontSize: '28px',
-              fontWeight: '600',
-              letterSpacing: '-0.02em',
-              marginBottom: '12px',
-              color: '#0a0a0a',
-            }}>
-              Check your email
-            </h1>
-            
-            <p style={{
-              fontSize: '15px',
-              color: '#888',
-              marginBottom: '8px',
-              lineHeight: 1.5,
-            }}>
-              We sent a sign-in link to
-            </p>
-            
-            <p style={{
-              fontSize: '15px',
-              fontWeight: '500',
-              color: '#0a0a0a',
-              marginBottom: '32px',
-            }}>
-              {email}
-            </p>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: '#666', marginBottom: '6px' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  border: '1px solid #e5e5e5',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {error && (
+              <div style={{
+                padding: '12px',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                color: '#dc2626',
+                fontSize: '14px',
+                marginBottom: '16px',
+              }}>
+                {error}
+              </div>
+            )}
+
+            {message && (
+              <div style={{
+                padding: '12px',
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '8px',
+                color: '#166534',
+                fontSize: '14px',
+                marginBottom: '16px',
+              }}>
+                {message}
+              </div>
+            )}
 
             <button
-              onClick={() => {
-                setIsSent(false)
-                setEmail('')
-              }}
+              type="submit"
+              disabled={loading}
               style={{
-                padding: '12px 24px',
-                background: '#f5f5f5',
+                width: '100%',
+                padding: '14px',
+                background: '#0a0a0a',
+                color: 'white',
                 border: 'none',
-                borderRadius: '100px',
-                color: '#666',
-                fontSize: '14px',
+                borderRadius: '12px',
+                fontSize: '15px',
                 fontWeight: '500',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1,
+                marginBottom: '12px',
               }}
             >
-              Use a different email
+              {loading ? 'Please wait...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
             </button>
+          </form>
 
-            <p style={{
-              marginTop: '32px',
-              fontSize: '13px',
-              color: '#b0b0b0',
-            }}>
-              Didn't receive the email?{' '}
-              <button
-                onClick={handleResend}
-                disabled={isLoading}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#666',
-                  textDecoration: 'underline',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '13px',
-                }}
-              >
-                Resend
-              </button>
-            </p>
+          {/* Magic Link Option */}
+          {mode === 'login' && (
+            <button
+              onClick={handleMagicLink}
+              disabled={loading || !email}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: 'transparent',
+                color: '#666',
+                border: 'none',
+                fontSize: '14px',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              Send me a magic link instead
+            </button>
+          )}
+
+          {/* Toggle Login/Signup */}
+          <div style={{
+            marginTop: '20px',
+            textAlign: 'center',
+            fontSize: '14px',
+            color: '#666',
+          }}>
+            {mode === 'login' ? (
+              <>
+                Don't have an account?{' '}
+                <button
+                  onClick={() => setMode('signup')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0a0a0a',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{' '}
+                <button
+                  onClick={() => setMode('login')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0a0a0a',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Sign in
+                </button>
+              </>
+            )}
           </div>
-        )}
-      </main>
+        </div>
 
-      {/* Footer */}
-      <footer style={{
-        padding: '20px 40px',
-        textAlign: 'center',
-      }}>
+        {/* Footer */}
         <p style={{
+          textAlign: 'center',
+          marginTop: '24px',
           fontSize: '12px',
-          color: '#ccc',
+          color: '#888',
         }}>
-          Protected by clinical-grade encryption
+          By continuing, you agree to our{' '}
+          <Link href="/terms" style={{ color: '#666' }}>Terms</Link>
+          {' '}and{' '}
+          <Link href="/privacy" style={{ color: '#666' }}>Privacy Policy</Link>
         </p>
-      </footer>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-        
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        input::placeholder {
-          color: #b0b0b0;
-        }
-        
-        button:hover:not(:disabled) {
-          opacity: 0.9;
-        }
-      `}</style>
+      </div>
     </div>
-  )
+  );
 }

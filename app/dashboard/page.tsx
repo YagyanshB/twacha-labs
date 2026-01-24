@@ -9,6 +9,7 @@ import { useRealtimeScores } from '@/hooks/useRealtimeScores';
 import ScanButton from '@/app/components/ScanButton';
 import LowScansWarning from '@/app/components/LowScansWarning';
 import UpgradeModal from '@/app/components/UpgradeModal';
+import AIChatModal from '@/app/components/AIChatModal';
 
 // Twacha Labs - Men's Skin Health Dashboard
 // Designed for the first 200 beta users
@@ -32,6 +33,7 @@ export default function TwachaDashboard() {
   const [mounted, setMounted] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showAIChatModal, setShowAIChatModal] = useState(false);
 
   // Real data from database
   const [scanHistory, setScanHistory] = useState<any[]>([]);
@@ -592,14 +594,17 @@ export default function TwachaDashboard() {
                 <div style={{ fontSize: '14px', fontWeight: '500' }}>Scan Reminder</div>
                 <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Every 3 days</div>
               </button>
-              <button style={{
-                padding: '20px',
-                background: 'white',
-                border: '1px solid #eee',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}>
+              <button
+                onClick={() => setShowAIChatModal(true)}
+                style={{
+                  padding: '20px',
+                  background: 'white',
+                  border: '1px solid #eee',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
                 <div style={{ fontSize: '14px', fontWeight: '500' }}>Get Advice</div>
                 <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Ask our AI</div>
@@ -1146,6 +1151,13 @@ export default function TwachaDashboard() {
         onUpgrade={() => {
           router.push('/pricing');
         }}
+      />
+
+      {/* AI Chat Modal */}
+      <AIChatModal
+        isOpen={showAIChatModal}
+        onClose={() => setShowAIChatModal(false)}
+        scanContext={latestScan}
       />
 
       <style dangerouslySetInnerHTML={{__html: `

@@ -7,6 +7,7 @@ import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
 import ProductModal from './components/ProductModal';
+import MacroLensComparison from './components/MacroLensComparison';
 
 type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
 
@@ -153,6 +154,7 @@ export default function Home() {
             <HeroSection onStartScan={handleStartScan} />
             <DemoSection onStartScan={handleStartScan} />
             <BenefitsSection />
+            <MacroLensComparison />
             <ProductSection onOpenModal={() => setIsProductModalOpen(true)} />
             <ReportPreviewSection onStartScan={handleStartScan} />
             <FinalCTASection onStartScan={handleStartScan} />
