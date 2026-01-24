@@ -86,7 +86,7 @@ export default function StartFreeFlow({ onComplete, onBack }: StartFreeFlowProps
           </button>
           <div className="nav-right">
             <span className="text-sm" style={{ color: isCameraStep ? 'rgba(255, 255, 255, 0.7)' : 'var(--gray)' }}>
-              Step {step + 1} of 3
+              Step {step + 1} of 4
             </span>
           </div>
         </div>

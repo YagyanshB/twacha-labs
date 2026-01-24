@@ -563,23 +563,6 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           </button>
         </div>
 
-        {/* Upload Button - Always visible when in camera mode */}
-        {mode === 'camera' && !capturedImage && (
-          <div className="mb-6 flex justify-center">
-            <button
-              onClick={() => {
-                setMode('upload');
-                handleRetake();
-              }}
-              className="flex items-center gap-2 px-6 py-3 text-base text-gray-700 hover:text-gray-900 transition-colors border-2 border-gray-300 rounded-full hover:border-gray-400 bg-white font-medium"
-              type="button"
-            >
-              <Upload className="w-5 h-5" />
-              Upload photo instead
-            </button>
-          </div>
-        )}
-
         {/* Camera View or Upload Area */}
         <div className="camera-view">
           {mode === 'camera' ? (
@@ -749,19 +732,6 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                       </>
                     )}
                   </button>
-                  {/* Upload option always visible */}
-                  <button
-                    onClick={() => {
-                      setMode('upload');
-                      handleRetake();
-                    }}
-                    disabled={isUploading}
-                    className="secondary-cta camera-button mt-3"
-                    type="button"
-                  >
-                    <Upload className="button-icon" />
-                    Upload instead
-                  </button>
                 </>
               ) : (
                 <button
@@ -786,19 +756,6 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                   >
                     <Upload className="button-icon" />
                     Choose photo
-                  </button>
-                  {/* Camera option always visible */}
-                  <button
-                    onClick={() => {
-                      setMode('camera');
-                      handleRetake();
-                    }}
-                    disabled={isUploading}
-                    className="secondary-cta camera-button mt-3"
-                    type="button"
-                  >
-                    <Camera className="button-icon" />
-                    Use camera instead
                   </button>
                 </>
               ) : (

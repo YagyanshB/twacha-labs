@@ -9,6 +9,9 @@ import { useRealtimeScores } from '@/hooks/useRealtimeScores';
 import ScanButton from '@/app/components/ScanButton';
 import LowScansWarning from '@/app/components/LowScansWarning';
 import UpgradeModal from '@/app/components/UpgradeModal';
+import AIChatModal from '@/app/components/AIChatModal';
+import ScanReminderSettings from '@/app/components/ScanReminderSettings';
+import SkinGoalsSettings from '@/app/components/SkinGoalsSettings';
 
 // Twacha Labs - Men's Skin Health Dashboard
 // Designed for the first 200 beta users
@@ -32,6 +35,9 @@ export default function TwachaDashboard() {
   const [mounted, setMounted] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [showAIChatModal, setShowAIChatModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
 
   // Real data from database
   const [scanHistory, setScanHistory] = useState<any[]>([]);
@@ -555,54 +561,172 @@ export default function TwachaDashboard() {
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '12px',
             }}>
-              <button style={{
-                padding: '20px',
-                background: 'white',
-                border: '1px solid #eee',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s',
-              }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📊</div>
-                <div style={{ fontSize: '14px', fontWeight: '500' }}>View Full Report</div>
-                <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Download PDF</div>
+              <button
+                onClick={() => {
+                  // TODO: Implement PDF download
+                  alert('PDF download coming soon!');
+                }}
+                style={{
+                  padding: '20px',
+                  background: 'white',
+                  border: '1px solid #eee',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: '#fafafa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '500', marginBottom: '2px' }}>
+                    View Full Report
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#888' }}>
+                    Download PDF
+                  </div>
+                </div>
               </button>
-              <button style={{
-                padding: '20px',
-                background: 'white',
-                border: '1px solid #eee',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎯</div>
-                <div style={{ fontSize: '14px', fontWeight: '500' }}>Set Goals</div>
-                <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Track targets</div>
+
+              <button
+                onClick={() => setShowGoalsModal(true)}
+                style={{
+                  padding: '20px',
+                  background: 'white',
+                  border: '1px solid #eee',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: '#fafafa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="6"/>
+                    <circle cx="12" cy="12" r="2"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '500', marginBottom: '2px' }}>
+                    Set Goals
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#888' }}>
+                    Track targets
+                  </div>
+                </div>
               </button>
-              <button style={{
-                padding: '20px',
-                background: 'white',
-                border: '1px solid #eee',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>📅</div>
-                <div style={{ fontSize: '14px', fontWeight: '500' }}>Scan Reminder</div>
-                <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Every 3 days</div>
+
+              <button
+                onClick={() => setShowReminderModal(true)}
+                style={{
+                  padding: '20px',
+                  background: 'white',
+                  border: '1px solid #eee',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: '#fafafa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                    <path d="M9 16l2 2 4-4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '500', marginBottom: '2px' }}>
+                    Scan Reminder
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#888' }}>
+                    Set schedule
+                  </div>
+                </div>
               </button>
-              <button style={{
-                padding: '20px',
-                background: 'white',
-                border: '1px solid #eee',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>💬</div>
-                <div style={{ fontSize: '14px', fontWeight: '500' }}>Get Advice</div>
-                <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>Ask our AI</div>
+
+              <button
+                onClick={() => setShowAIChatModal(true)}
+                style={{
+                  padding: '20px',
+                  background: 'white',
+                  border: '1px solid #eee',
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: '#fafafa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="10" r="1"/>
+                    <circle cx="8" cy="10" r="1"/>
+                    <circle cx="16" cy="10" r="1"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '500', marginBottom: '2px' }}>
+                    Get Advice
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#888' }}>
+                    Ask our AI
+                  </div>
+                </div>
               </button>
             </div>
           </div>
@@ -1146,7 +1270,32 @@ export default function TwachaDashboard() {
         onUpgrade={() => {
           router.push('/pricing');
         }}
+        scansUsed={scansUsed}
+        scansLimit={limit}
       />
+
+      {/* AI Chat Modal */}
+      <AIChatModal
+        isOpen={showAIChatModal}
+        onClose={() => setShowAIChatModal(false)}
+        scanContext={latestScan}
+      />
+
+      {/* Scan Reminder Settings Modal */}
+      {showReminderModal && user && (
+        <ScanReminderSettings
+          userId={user.id}
+          onClose={() => setShowReminderModal(false)}
+        />
+      )}
+
+      {/* Skin Goals Settings Modal */}
+      {showGoalsModal && user && (
+        <SkinGoalsSettings
+          userId={user.id}
+          onClose={() => setShowGoalsModal(false)}
+        />
+      )}
 
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');

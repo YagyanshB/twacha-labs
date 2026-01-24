@@ -7,6 +7,7 @@ import FaceIDScanner from './components/FaceIDScanner';
 import EmailGate from './components/EmailGate';
 import ResultsDashboard from './components/ResultsDashboard';
 import ProductModal from './components/ProductModal';
+import MacroLensComparison from './components/MacroLensComparison';
 
 type FunnelState = 'landing' | 'scanning' | 'analyzing' | 'email-gate' | 'results';
 
@@ -153,7 +154,7 @@ export default function Home() {
             <HeroSection onStartScan={handleStartScan} />
             <DemoSection onStartScan={handleStartScan} />
             <BenefitsSection />
-            <ProductSection onOpenModal={() => setIsProductModalOpen(true)} />
+            <MacroLensComparison />
             <ReportPreviewSection onStartScan={handleStartScan} />
             <FinalCTASection onStartScan={handleStartScan} />
             <Footer />
@@ -355,69 +356,6 @@ function BenefitsSection() {
             <h3>Actually works</h3>
             <p>Recommendations based on clinical research, not marketing. Simple routines you'll actually stick to.</p>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Product Section - Coming Soon
-function ProductSection({ onOpenModal }: { onOpenModal: () => void }) {
-  return (
-    <section className="product-section" style={{ background: '#18181b', padding: '5rem 2rem', borderTop: '1px solid #27272a' }}>
-      <div className="product-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <span style={{ color: '#a1a1aa', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coming Soon</span>
-          <h2 style={{ fontSize: '2.25rem', fontWeight: 'bold', marginTop: '0.5rem', marginBottom: '1rem', color: '#fff' }}>
-            Twacha Pro Kit
-          </h2>
-          <p style={{ color: '#a1a1aa', maxWidth: '42rem', margin: '0 auto' }}>
-            Professional-grade hardware for clinic-level analysis at home. 
-            Join the waitlist for early access.
-          </p>
-            </div>
-
-        <div style={{ maxWidth: '28rem', margin: '0 auto', background: '#000', border: '1px solid #27272a', borderRadius: '0.75rem', padding: '2rem' }}>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
-              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Medical-grade imaging
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
-              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Hospital-level accuracy
-            </li>
-            <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#d4d4d8' }}>
-              <svg className="w-5 h-5" style={{ width: '1.25rem', height: '1.25rem', color: '#71717a' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Includes 1 year premium
-                  </li>
-              </ul>
-
-          <button 
-              onClick={onOpenModal}
-            style={{ 
-              width: '100%', 
-              background: '#27272a', 
-              color: '#71717a', 
-              padding: '0.75rem', 
-              borderRadius: '0.5rem', 
-              fontWeight: '500',
-              cursor: 'not-allowed',
-              border: 'none'
-            }}
-            disabled
-          >
-            Notify me when available
-          </button>
-          <p style={{ fontSize: '0.75rem', color: '#52525b', textAlign: 'center', marginTop: '0.75rem' }}>
-            Expected: Q2 2026
-          </p>
         </div>
       </div>
     </section>
