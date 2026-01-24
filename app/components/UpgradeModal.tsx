@@ -7,9 +7,11 @@ interface UpgradeModalProps {
   isOpen: boolean
   onClose: () => void
   onUpgrade?: () => void
+  scansUsed?: number
+  scansLimit?: number
 }
 
-export default function UpgradeModal({ isOpen, onClose, onUpgrade }: UpgradeModalProps) {
+export default function UpgradeModal({ isOpen, onClose, onUpgrade, scansUsed, scansLimit }: UpgradeModalProps) {
   const router = useRouter()
 
   useEffect(() => {
@@ -106,7 +108,9 @@ export default function UpgradeModal({ isOpen, onClose, onUpgrade }: UpgradeModa
           color: '#0a0a0a',
           letterSpacing: '-0.02em',
         }}>
-          Upgrade to Premium
+          {scansUsed !== undefined && scansLimit !== undefined
+            ? "You've used all free scans"
+            : "Upgrade to Premium"}
         </h2>
 
         <p style={{
@@ -116,38 +120,58 @@ export default function UpgradeModal({ isOpen, onClose, onUpgrade }: UpgradeModa
           marginBottom: '32px',
           lineHeight: 1.6,
         }}>
-          Get unlimited scans and unlock your full skin potential.
+          {scansUsed !== undefined && scansLimit !== undefined
+            ? `You've completed ${scansUsed} of ${scansLimit} free scans this month. Upgrade to Premium for unlimited scans and advanced features.`
+            : "Get unlimited scans and unlock your full skin potential."}
         </p>
 
         {/* Features */}
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          marginBottom: '32px',
+          background: '#fafafa',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '24px',
         }}>
-          {[
-            'Unlimited skin scans',
-            'Detailed issue tracking over time',
-            'Personalized product recommendations',
-            'Priority support',
-          ].map((feature, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              <span style={{ fontSize: '14px', color: '#444' }}>{feature}</span>
-            </div>
-          ))}
+          <div style={{ fontSize: '13px', color: '#888', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Premium includes
+          </div>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}>
+            {[
+              'Unlimited skin scans',
+              'Detailed analysis reports',
+              'AI skincare advisor (unlimited)',
+              'Progress tracking & insights',
+              'Priority support',
+            ].map((feature, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span style={{ fontSize: '14px', color: '#0a0a0a' }}>{feature}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Price */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '24px',
+          marginBottom: '20px',
         }}>
-          <span style={{ fontSize: '36px', fontWeight: '700', color: '#0a0a0a' }}>£4.99</span>
-          <span style={{ fontSize: '15px', color: '#888' }}>/month</span>
+          <div style={{ marginBottom: '4px' }}>
+            <span style={{ fontSize: '14px', color: '#888', textDecoration: 'line-through' }}>£9.99/mo</span>
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <span style={{ fontSize: '32px', fontWeight: '700', color: '#0a0a0a' }}>£4.99</span>
+            <span style={{ fontSize: '16px', color: '#888', fontWeight: '400' }}>/month</span>
+          </div>
+          <div style={{ fontSize: '13px', color: '#22c55e', fontWeight: '500' }}>
+            50% off for early users
+          </div>
         </div>
 
         {/* Buttons */}

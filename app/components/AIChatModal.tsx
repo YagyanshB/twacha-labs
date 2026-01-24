@@ -225,14 +225,14 @@ export default function AIChatModal({ isOpen, onClose, scanContext }: AIChatModa
 
         {/* Disclaimer */}
         <div style={{
-          padding: '12px 20px',
+          padding: '12px 16px',
           background: '#fffbeb',
           borderTop: '1px solid #fef3c7',
           fontSize: '11px',
           color: '#92400e',
           textAlign: 'center',
         }}>
-          ⚠️ This is general guidance only, not medical advice. Consult a dermatologist for diagnosis.
+          <strong>⚠️ Not medical advice.</strong> For skin concerns, consult a dermatologist.
         </div>
       </div>
     </div>
