@@ -1640,3 +1640,70 @@ footer {
 .duration-300 {
   animation-duration: 300ms;
 }
+
+/* Mobile Responsiveness Improvements */
+@media (max-width: 768px) {
+  /* Prevent zoom on input focus iOS */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Full-width buttons on mobile */
+  button {
+    min-height: 44px; /* Minimum touch target */
+  }
+
+  /* Responsive text sizes */
+  h1 {
+    font-size: clamp(24px, 6vw, 32px);
+  }
+
+  h2 {
+    font-size: clamp(20px, 5vw, 24px);
+  }
+
+  /* Stack navigation on mobile */
+  .nav-container {
+    flex-direction: column;
+    gap: 12px;
+    padding: 1rem;
+  }
+
+  /* Mobile-friendly modals */
+  [role="dialog"],
+  .modal {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: fixed !important;
+    bottom: 0 !important;
+    top: auto !important;
+  }
+
+  /* Responsive grids */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Touch-friendly spacing */
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 375px) {
+  .nav-container {
+    padding: 0.75rem;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+}

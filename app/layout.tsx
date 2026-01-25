@@ -17,6 +17,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Twacha Labs - Skin Analysis Reimagined",
   description: "AI-powered analysis designed specifically for men's skin. No BS, just results.",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({

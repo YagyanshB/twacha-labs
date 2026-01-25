@@ -237,6 +237,24 @@ export default function AnalysisPage() {
       }
 
       // Note: Profile stats (total_scans, current_streak) are auto-updated by database trigger
+      // CRITICAL: Update monthly_scans_used counter for scan allowance
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('monthly_scans_used, total_scans')
+        .eq('id', user.id)
+        .single();
+
+      if (currentProfile) {
+        await supabase
+          .from('profiles')
+          .update({
+            monthly_scans_used: (currentProfile.monthly_scans_used || 0) + 1,
+            total_scans: (currentProfile.total_scans || 0) + 1,
+            last_scan_date: new Date().toISOString().split('T')[0],
+          })
+          .eq('id', user.id);
+      }
+
       // Increment local usage counter for UI
       incrementUsage(user.id);
 
