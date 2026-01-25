@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera, Upload, Check, Image as ImageIcon, X, Loader2, AlertCircle } from 'lucide-react';
 import Webcam from 'react-webcam';
 import { uploadImageToSupabase } from '@/lib/image-upload';
+import MedicalDisclaimerModal from '../MedicalDisclaimerModal';
 
 // YCbCr-based skin color detection (works for all skin tones)
 function isSkinColor(r: number, g: number, b: number): boolean {
@@ -57,7 +58,9 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
-  
+  const [hasConsented, setHasConsented] = useState(false);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
+
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -707,6 +710,64 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           </div>
         )}
 
+        {/* Medical Disclaimer Consent - REQUIRED */}
+        {!capturedImage && (
+          <div style={{
+            background: '#fffbeb',
+            border: '1px solid #fef3c7',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '16px',
+          }}>
+            <label style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox"
+                checked={hasConsented}
+                onChange={(e) => setHasConsented(e.target.checked)}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  marginTop: '2px',
+                  accentColor: '#0a0a0a',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.5 }}>
+                I understand that Twacha Labs is an <strong>AI tool for cosmetic analysis</strong>,
+                NOT a medical device. It cannot diagnose skin diseases, cancer, or medical conditions.
+                I agree to the{' '}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowDisclaimerModal(true);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0a0a0a',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: 0,
+                    font: 'inherit',
+                    fontWeight: '600',
+                  }}
+                >
+                  Medical Disclaimer
+                </button>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" style={{ color: '#0a0a0a', fontWeight: '600' }}>Privacy Policy</a>.
+              </span>
+            </label>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="camera-actions">
           {mode === 'camera' ? (
@@ -715,20 +776,28 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                 <>
                   <button
                     onClick={handleCapture}
-                    disabled={isUploading}
-                    className={`primary-cta camera-button ${!allConditionsMet ? 'opacity-60' : ''} ${isUploading ? 'disabled' : ''}`}
+                    disabled={isUploading || !hasConsented}
+                    className={`primary-cta camera-button ${(!allConditionsMet || !hasConsented) ? 'opacity-60' : ''} ${isUploading ? 'disabled' : ''}`}
                     type="button"
-                    title={!allConditionsMet ? 'Position your face properly for best results' : 'Ready to capture'}
+                    title={!hasConsented ? 'Please accept disclaimer first' : !allConditionsMet ? 'Position your face properly for best results' : 'Ready to capture'}
+                    style={{
+                      cursor: (!hasConsented || isUploading) ? 'not-allowed' : 'pointer',
+                    }}
                   >
                     {isUploading ? (
                       <>
                         <Loader2 className="button-icon animate-spin" />
                         Uploading...
                       </>
+                    ) : !hasConsented ? (
+                      <>
+                        <Camera className="button-icon" />
+                        Accept disclaimer to continue
+                      </>
                     ) : (
                       <>
                         <Camera className="button-icon" />
-                        Capture photo
+                        Capture & Analyze
                       </>
                     )}
                   </button>
@@ -750,12 +819,16 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                 <>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="primary-cta camera-button"
+                    disabled={isUploading || !hasConsented}
+                    className={`primary-cta camera-button ${!hasConsented ? 'opacity-60' : ''}`}
                     type="button"
+                    title={!hasConsented ? 'Please accept disclaimer first' : 'Choose photo'}
+                    style={{
+                      cursor: (!hasConsented || isUploading) ? 'not-allowed' : 'pointer',
+                    }}
                   >
                     <Upload className="button-icon" />
-                    Choose photo
+                    {!hasConsented ? 'Accept disclaimer to continue' : 'Choose photo'}
                   </button>
                 </>
               ) : (
@@ -780,6 +853,12 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           }
         </p>
       </div>
+
+      {/* Medical Disclaimer Modal */}
+      <MedicalDisclaimerModal
+        isOpen={showDisclaimerModal}
+        onClose={() => setShowDisclaimerModal(false)}
+      />
     </div>
   );
 }
