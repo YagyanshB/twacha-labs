@@ -43,6 +43,7 @@ export default function TwachaDashboard() {
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [isLoadingExtras, setIsLoadingExtras] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -61,6 +62,16 @@ export default function TwachaDashboard() {
     const { supabase } = await import('@/lib/supabase');
 
     try {
+      // Fetch user profile for fresh name data
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+      }
       // Get scan history for progress chart (last 10 scans)
       const { data: historyData } = await supabase
         .from('scans')
@@ -154,6 +165,20 @@ export default function TwachaDashboard() {
             fetchDashboardData(user.id);
           }
         )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${user.id}`,
+          },
+          (payload) => {
+            // Update profile when name or other profile data changes
+            console.log('Profile updated:', payload.new);
+            setProfile(payload.new);
+          }
+        )
         .subscribe();
 
       return () => {
@@ -192,7 +217,7 @@ export default function TwachaDashboard() {
 
   // Real user data from hooks
   const userData = {
-    name: user.email?.split('@')[0] || 'User',
+    name: profile?.full_name || user.email?.split('@')[0] || 'User',
     memberSince: stats.memberSince || new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
     totalScans: stats.totalScans || 0,
     streak: stats.currentStreak || 0,
