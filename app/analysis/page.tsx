@@ -28,22 +28,38 @@ interface AnalysisResult {
 }
 
 interface SkinAnalysisResult {
-  overallScore: number;
-  skinType: string;
-  issues: Array<{
-    type: string;
-    severity: 'mild' | 'moderate' | 'severe';
-    area: string;
-    count: number | null;
-  }>;
-  metrics: {
-    hydration: number;
-    oilControl: number;
-    poreHealth: number;
-    texture: number;
-    clarity: number;
+  image_quality: {
+    score: number;
+    status: 'pass' | 'limited' | 'fail';
+    issues: string[];
+    usable_zones?: string[];
+    unusable_zones?: Array<{ zone: string; reason: string }>;
   };
-  recommendations: string[];
+  analysis: {
+    overall_score: number;
+    skin_type: string;
+    confidence: 'high' | 'medium' | 'low';
+    metrics: {
+      hydration: { score: number; confidence: string } | number;
+      oil_control: { score: number; confidence: string } | number;
+      pore_health: { score: number; confidence: string } | number;
+      texture: { score: number; confidence: string } | number;
+      clarity: { score: number; confidence: string } | number;
+    };
+    issues_detected: Array<{
+      type: string;
+      severity: 'mild' | 'moderate' | 'severe';
+      location: string;
+      confidence: string;
+      count: number | null;
+    }>;
+    recommendations: string[];
+  };
+  upsell: {
+    show_pro_kit: boolean;
+    reason?: string;
+    message?: string;
+  };
   summary: string;
 }
 
@@ -178,13 +194,23 @@ export default function AnalysisPage() {
           user_id: user.id,
           image_url: data.imageUrl,
           status: 'completed',
-          overall_score: result.overallScore,
-          hydration_score: result.metrics.hydration,
-          oil_control_score: result.metrics.oilControl,
-          pore_health_score: result.metrics.poreHealth,
-          texture_score: result.metrics.texture,
-          clarity_score: result.metrics.clarity,
-          skin_type: result.skinType,
+          overall_score: result.analysis.overall_score,
+          hydration_score: typeof result.analysis.metrics.hydration === 'object'
+            ? result.analysis.metrics.hydration.score
+            : result.analysis.metrics.hydration,
+          oil_control_score: typeof result.analysis.metrics.oil_control === 'object'
+            ? result.analysis.metrics.oil_control.score
+            : result.analysis.metrics.oil_control,
+          pore_health_score: typeof result.analysis.metrics.pore_health === 'object'
+            ? result.analysis.metrics.pore_health.score
+            : result.analysis.metrics.pore_health,
+          texture_score: typeof result.analysis.metrics.texture === 'object'
+            ? result.analysis.metrics.texture.score
+            : result.analysis.metrics.texture,
+          clarity_score: typeof result.analysis.metrics.clarity === 'object'
+            ? result.analysis.metrics.clarity.score
+            : result.analysis.metrics.clarity,
+          skin_type: result.analysis.skin_type,
           summary: result.summary,
           analysis: result, // Store full GPT-4o response as jsonb
           analyzed_at: new Date().toISOString(),
@@ -198,12 +224,12 @@ export default function AnalysisPage() {
       }
 
       // Save issues to database
-      if (result.issues && result.issues.length > 0) {
-        const issues = result.issues.map((issue) => ({
+      if (result.analysis.issues_detected && result.analysis.issues_detected.length > 0) {
+        const issues = result.analysis.issues_detected.map((issue) => ({
           scan_id: scan.id,
           issue_type: issue.type.toLowerCase().replace(/\s+/g, '_'),
           severity: issue.severity,
-          location: issue.area,
+          location: issue.location,
           count: issue.count,
         }));
 
@@ -217,8 +243,8 @@ export default function AnalysisPage() {
       }
 
       // Save recommendations to database
-      if (result.recommendations && result.recommendations.length > 0) {
-        const recommendations = result.recommendations.map((rec, i) => ({
+      if (result.analysis.recommendations && result.analysis.recommendations.length > 0) {
+        const recommendations = result.analysis.recommendations.map((rec, i) => ({
           scan_id: scan.id,
           priority: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
           title: rec,
@@ -288,12 +314,15 @@ export default function AnalysisPage() {
   if (skinAnalysisResult) {
     return (
       <SkinAnalysisResults
-        overallScore={skinAnalysisResult.overallScore}
-        skinType={skinAnalysisResult.skinType}
-        issues={skinAnalysisResult.issues}
-        metrics={skinAnalysisResult.metrics}
-        recommendations={skinAnalysisResult.recommendations}
+        overallScore={skinAnalysisResult.analysis.overall_score}
+        skinType={skinAnalysisResult.analysis.skin_type}
+        issues={skinAnalysisResult.analysis.issues_detected}
+        metrics={skinAnalysisResult.analysis.metrics}
+        recommendations={skinAnalysisResult.analysis.recommendations}
         summary={skinAnalysisResult.summary}
+        imageQuality={skinAnalysisResult.image_quality}
+        analysisData={skinAnalysisResult.analysis}
+        upsell={skinAnalysisResult.upsell}
         onScanAgain={handleScanAgain}
       />
     );
