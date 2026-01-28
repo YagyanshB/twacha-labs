@@ -6,6 +6,7 @@ import StartFreeFlow, { StartFreeFlowData } from '../components/StartFreeFlow';
 import UpgradePrompt from '../components/UpgradePrompt';
 import ResultsDashboard from '../components/ResultsDashboard';
 import SkinAnalysisResults from '../components/SkinAnalysisResults';
+import GenderRedirectModal from '../components/GenderRedirectModal';
 import { canAnalyze, incrementUsage, getUserUsage } from '@/lib/usage';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
@@ -28,6 +29,12 @@ interface AnalysisResult {
 }
 
 interface SkinAnalysisResult {
+  gender_check?: {
+    valid: boolean;
+    reason: 'female_detected' | 'minor_detected' | 'male_detected';
+    message?: string;
+    uncertain?: boolean;
+  };
   image_quality: {
     score: number;
     status: 'pass' | 'limited' | 'fail';
@@ -75,6 +82,9 @@ export default function AnalysisPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingStage, setLoadingStage] = useState<'syncing' | 'analyzing'>('syncing');
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [genderMessage, setGenderMessage] = useState('');
+  const [genderReason, setGenderReason] = useState<'female_detected' | 'minor_detected'>('female_detected');
   
   useEffect(() => {
     // Check usage limit (replace with real user ID from auth)
@@ -176,6 +186,15 @@ export default function AnalysisPage() {
       }
 
       const result: SkinAnalysisResult = await response.json();
+
+      // Check gender validation first
+      if (result.gender_check && !result.gender_check.valid) {
+        setShowGenderModal(true);
+        setGenderMessage(result.gender_check.message || 'This service is designed for men\'s skincare.');
+        setGenderReason(result.gender_check.reason as 'female_detected' | 'minor_detected');
+        setIsAnalyzing(false);
+        return;
+      }
 
       // Display results immediately (works for anonymous users)
       setSkinAnalysisResult(result);
@@ -387,9 +406,20 @@ export default function AnalysisPage() {
   // The StartFreeFlow component handles the entire flow internally
   // including enhanced camera with face detection, age/skin type collection
   return (
-    <StartFreeFlow
-      onComplete={handleFlowComplete}
-      onBack={() => router.push('/')}
-    />
+    <>
+      <StartFreeFlow
+        onComplete={handleFlowComplete}
+        onBack={() => router.push('/')}
+      />
+      <GenderRedirectModal
+        isOpen={showGenderModal}
+        onClose={() => {
+          setShowGenderModal(false);
+          handleScanAgain();
+        }}
+        message={genderMessage}
+        reason={genderReason}
+      />
+    </>
   );
 }
