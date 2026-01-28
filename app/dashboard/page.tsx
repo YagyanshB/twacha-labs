@@ -12,10 +12,136 @@ import UpgradeModal from '@/app/components/UpgradeModal';
 import AIChatModal from '@/app/components/AIChatModal';
 import ScanReminderSettings from '@/app/components/ScanReminderSettings';
 import SkinGoalsSettings from '@/app/components/SkinGoalsSettings';
+import ComingSoonModal from '@/app/components/ComingSoonModal';
 
 // Twacha Labs - Men's Skin Health Dashboard
 // Designed for the first 200 beta users
 // Features: Overall skin score, issue detection, progress tracking, actionable insights
+
+// Issue details database
+const issueDetailsDatabase: Record<string, { what: string; why: string; tips: string[] }> = {
+  'oily_zones': {
+    what: 'Excess sebum production causing shine, particularly in the T-zone area.',
+    why: 'This can be caused by genetics, hormones, humidity, or using products that strip natural oils.',
+    tips: [
+      'Use a gentle, non-stripping cleanser twice daily',
+      'Look for products with niacinamide to regulate oil',
+      'Avoid over-washing which can increase oil production',
+      'Use oil-free, non-comedogenic moisturizers',
+    ],
+  },
+  'dark_spots': {
+    what: 'Areas of hyperpigmentation where melanin has concentrated.',
+    why: 'Often caused by sun exposure, acne scarring, or skin inflammation.',
+    tips: [
+      'Apply SPF 30+ daily, even on cloudy days',
+      'Consider vitamin C serum in your morning routine',
+      'Be patient - fading takes 3-6 months of consistent care',
+      'Avoid picking at skin which can worsen spots',
+    ],
+  },
+  'enlarged_pores': {
+    what: 'Visibly larger pore openings, most common on nose and cheeks.',
+    why: 'Caused by excess oil, loss of skin elasticity, or clogged pores stretching.',
+    tips: [
+      'Use salicylic acid to keep pores clear',
+      'Retinol can help improve pore appearance over time',
+      'Regular gentle exfoliation prevents buildup',
+      'Clay masks once a week can help minimize appearance',
+    ],
+  },
+  'acne': {
+    what: 'Inflammatory skin condition with pimples, blackheads, or cysts.',
+    why: 'Caused by clogged pores, bacteria, excess oil, and inflammation.',
+    tips: [
+      'Use benzoyl peroxide or salicylic acid treatments',
+      'Avoid touching or picking at blemishes',
+      'Change pillowcases regularly',
+      'Consider seeing a dermatologist for persistent acne',
+    ],
+  },
+  'dry_patches': {
+    what: 'Areas of flaky, rough, or dehydrated skin.',
+    why: 'Can be caused by weather, harsh products, or lack of moisture barrier protection.',
+    tips: [
+      'Use a gentle, hydrating cleanser',
+      'Apply moisturizer to damp skin to lock in hydration',
+      'Look for ingredients like hyaluronic acid and ceramides',
+      'Avoid hot water and harsh soaps',
+    ],
+  },
+};
+
+// Clinical SVG icons for recommendations
+function getRecommendationIcon(title: string, ingredient?: string): React.ReactNode {
+  const titleLower = (title || '').toLowerCase();
+  const ingredientLower = (ingredient || '').toLowerCase();
+
+  // Check for specific keywords to determine icon type
+  if (titleLower.includes('cleanser') || titleLower.includes('wash') || titleLower.includes('clean')) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.82-.13 2.68-.37"/>
+        <path d="M12 6v6l4 2"/>
+        <circle cx="19" cy="19" r="3"/>
+      </svg>
+    );
+  }
+
+  if (titleLower.includes('serum') || ingredientLower.includes('niacinamide') || ingredientLower.includes('vitamin c') || titleLower.includes('treatment')) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+        <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+        <path d="M12 18a6 6 0 0 0 0-12v12z"/>
+      </svg>
+    );
+  }
+
+  if (titleLower.includes('moisturizer') || titleLower.includes('hydrat') || titleLower.includes('cream')) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+        <path d="M12 22c6 0 8-4 8-10S14 2 12 2"/>
+        <path d="M12 22c-6 0-8-4-8-10S10 2 12 2"/>
+        <path d="M12 2v20"/>
+      </svg>
+    );
+  }
+
+  if (titleLower.includes('spf') || titleLower.includes('sunscreen') || titleLower.includes('sun')) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    );
+  }
+
+  if (titleLower.includes('exfoliat') || titleLower.includes('peel') || ingredientLower.includes('aha') || ingredientLower.includes('bha')) {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v8"/>
+        <path d="M8 12h8"/>
+      </svg>
+    );
+  }
+
+  // Default icon for general recommendations
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 16v-4"/>
+      <path d="M12 8h.01"/>
+    </svg>
+  );
+}
 
 export default function TwachaDashboard() {
   const { user, loading, signOut } = useUser();
@@ -38,12 +164,15 @@ export default function TwachaDashboard() {
   const [showAIChatModal, setShowAIChatModal] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showGoalsModal, setShowGoalsModal] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState<'report' | 'ai' | null>(null);
 
   // Real data from database
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [isLoadingExtras, setIsLoadingExtras] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [expandedRec, setExpandedRec] = useState<string | null>(null);
+  const [expandedIssue, setExpandedIssue] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -105,14 +234,14 @@ export default function TwachaDashboard() {
           .order('priority', { ascending: true });
 
         if (recsData && recsData.length > 0) {
-          // Format recommendations for display
+          // Format recommendations for display with clinical SVG icons
           const formatted = recsData.map((rec, idx) => ({
             id: rec.id,
             priority: rec.priority === 1 ? 'high' : 'medium',
             title: rec.title,
             description: rec.description,
             action: rec.priority === 1 ? 'Add to routine' : 'Learn more',
-            icon: idx === 0 ? '🎯' : idx === 1 ? '💧' : '🔬',
+            icon: getRecommendationIcon(rec.title, rec.ingredient),
           }));
           setRecommendations(formatted);
         }
@@ -587,10 +716,7 @@ export default function TwachaDashboard() {
               gap: '12px',
             }}>
               <button
-                onClick={() => {
-                  // TODO: Implement PDF download
-                  alert('PDF download coming soon!');
-                }}
+                onClick={() => setShowComingSoon('report')}
                 style={{
                   padding: '20px',
                   background: 'white',
@@ -714,7 +840,7 @@ export default function TwachaDashboard() {
               </button>
 
               <button
-                onClick={() => setShowAIChatModal(true)}
+                onClick={() => setShowComingSoon('ai')}
                 style={{
                   padding: '20px',
                   background: 'white',
@@ -754,6 +880,66 @@ export default function TwachaDashboard() {
                 </div>
               </button>
             </div>
+
+            {/* Quick Navigation Cards */}
+            {detectedIssues.length > 0 || recommendations.length > 0 ? (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '12px',
+                marginTop: '24px',
+              }}>
+                {detectedIssues.length > 0 && (
+                  <button
+                    onClick={() => setActiveTab('issues')}
+                    style={{
+                      padding: '20px',
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      borderRadius: '16px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px', color: '#dc2626' }}>
+                      {detectedIssues.length}
+                    </div>
+                    <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', color: '#0a0a0a' }}>
+                      Issues Detected
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#666' }}>
+                      View details →
+                    </div>
+                  </button>
+                )}
+
+                {recommendations.length > 0 && (
+                  <button
+                    onClick={() => setActiveTab('recommendations')}
+                    style={{
+                      padding: '20px',
+                      background: '#f0fdf4',
+                      border: '1px solid #bbf7d0',
+                      borderRadius: '16px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px', color: '#16a34a' }}>
+                      {recommendations.length}
+                    </div>
+                    <div style={{ fontWeight: '600', fontSize: '15px', marginBottom: '4px', color: '#0a0a0a' }}>
+                      Recommendations
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#666' }}>
+                      View actions →
+                    </div>
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
         )}
 
@@ -851,24 +1037,66 @@ export default function TwachaDashboard() {
                       </div>
                     )}
 
-                    <button style={{
-                      marginTop: '16px',
-                      padding: '12px 20px',
-                      background: '#f5f5f5',
-                      border: 'none',
-                      borderRadius: '100px',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}>
-                      View details
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    <button
+                      onClick={() => setExpandedIssue(expandedIssue === issue.issue_type ? null : issue.issue_type)}
+                      style={{
+                        marginTop: '16px',
+                        padding: '12px 20px',
+                        background: '#f5f5f5',
+                        border: 'none',
+                        borderRadius: '100px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      {expandedIssue === issue.issue_type ? 'Show less' : 'View details'}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: expandedIssue === issue.issue_type ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 0.2s'
+                        }}
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
                       </svg>
                     </button>
+
+                    {/* Expanded details */}
+                    {expandedIssue === issue.issue_type && issueDetailsDatabase[issue.issue_type] && (
+                      <div style={{
+                        marginTop: '16px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid #eee',
+                      }}>
+                        <h5 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>What is this?</h5>
+                        <p style={{ fontSize: '13px', color: '#444', marginBottom: '12px', lineHeight: 1.5 }}>
+                          {issueDetailsDatabase[issue.issue_type].what}
+                        </p>
+
+                        <h5 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>Why it happens:</h5>
+                        <p style={{ fontSize: '13px', color: '#444', marginBottom: '12px', lineHeight: 1.5 }}>
+                          {issueDetailsDatabase[issue.issue_type].why}
+                        </p>
+
+                        <h5 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>Tips to improve:</h5>
+                        <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                          {issueDetailsDatabase[issue.issue_type].tips.map((tip, i) => (
+                            <li key={i} style={{ fontSize: '13px', color: '#444', marginBottom: '6px', lineHeight: 1.5 }}>
+                              {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -1005,31 +1233,34 @@ export default function TwachaDashboard() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '200px', padding: '0 20px' }}>
-                  {scanHistory.slice().reverse().map((scan, i) => (
-                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{
-                        width: '100%',
-                        height: `${scan.score * 2}px`,
-                        background: i === scanHistory.length - 1 ? '#0a0a0a' : '#e5e5e5',
-                        borderRadius: '4px 4px 0 0',
-                        transition: 'height 0.5s ease-out',
-                        position: 'relative',
-                      }}>
-                        <span style={{
-                          position: 'absolute',
-                          top: '-24px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          color: i === scanHistory.length - 1 ? '#0a0a0a' : '#888',
+                  {scanHistory.map((scan, i) => {
+                    const isLatest = i === scanHistory.length - 1; // Last item is the latest (newest)
+                    return (
+                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{
+                          width: '100%',
+                          height: `${scan.score * 2}px`,
+                          background: isLatest ? '#0a0a0a' : '#e5e5e5',
+                          borderRadius: '4px 4px 0 0',
+                          transition: 'height 0.5s ease-out',
+                          position: 'relative',
                         }}>
-                          {scan.score}
-                        </span>
+                          <span style={{
+                            position: 'absolute',
+                            top: '-24px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            color: isLatest ? '#0a0a0a' : '#888',
+                          }}>
+                            {scan.score}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>{scan.date}</span>
                       </div>
-                      <span style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>{scan.date}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1186,18 +1417,87 @@ export default function TwachaDashboard() {
                     <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
                       {rec.description}
                     </p>
-                    <button style={{
-                      padding: '10px 20px',
-                      background: rec.priority === 'high' ? '#0a0a0a' : '#f5f5f5',
-                      color: rec.priority === 'high' ? 'white' : '#0a0a0a',
-                      border: 'none',
-                      borderRadius: '100px',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                    }}>
-                      {rec.action}
+                    <button
+                      onClick={() => setExpandedRec(expandedRec === rec.id ? null : rec.id)}
+                      style={{
+                        padding: '10px 20px',
+                        background: rec.priority === 'high' ? '#0a0a0a' : '#f5f5f5',
+                        color: rec.priority === 'high' ? 'white' : '#0a0a0a',
+                        border: 'none',
+                        borderRadius: '100px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      {expandedRec === rec.id ? 'Show less' : 'Learn more'}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{
+                          transform: expandedRec === rec.id ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 0.2s'
+                        }}
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
                     </button>
+
+                    {/* Expanded content */}
+                    {expandedRec === rec.id && (
+                      <div style={{
+                        marginTop: '16px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid #eee',
+                        fontSize: '14px',
+                        color: '#444',
+                        lineHeight: 1.6,
+                      }}>
+                        <h5 style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>Why this helps:</h5>
+                        <p style={{ marginBottom: '12px' }}>
+                          {rec.ingredient
+                            ? `Based on your scan results, ${rec.ingredient} can help address the concerns we detected in your skin. This ingredient has been clinically proven to improve skin health.`
+                            : `Based on your scan results, this product type can help improve your specific skin concerns. Our AI analysis identified this as a priority for your routine.`
+                          }
+                        </p>
+
+                        <h5 style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>How to use:</h5>
+                        <p style={{ marginBottom: '12px' }}>
+                          {rec.title.toLowerCase().includes('cleanser') && 'Apply to damp skin, massage gently for 30 seconds, then rinse thoroughly. Use twice daily.'}
+                          {rec.title.toLowerCase().includes('serum') && 'Apply 2-3 drops to clean, dry skin before moisturizer. Use once or twice daily.'}
+                          {rec.title.toLowerCase().includes('moisturizer') && 'Apply to clean skin morning and night. Massage gently until fully absorbed.'}
+                          {rec.title.toLowerCase().includes('spf') && 'Apply as the final step of your morning routine. Reapply every 2 hours when in direct sunlight.'}
+                          {!rec.title.toLowerCase().includes('cleanser') &&
+                           !rec.title.toLowerCase().includes('serum') &&
+                           !rec.title.toLowerCase().includes('moisturizer') &&
+                           !rec.title.toLowerCase().includes('spf') &&
+                           'Apply to clean skin as part of your daily routine. Follow product-specific instructions for best results.'}
+                        </p>
+
+                        {rec.ingredient && (
+                          <>
+                            <h5 style={{ fontWeight: '600', marginBottom: '8px', fontSize: '14px' }}>Key ingredient:</h5>
+                            <div style={{
+                              display: 'inline-block',
+                              padding: '6px 12px',
+                              background: '#f0f9ff',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              color: '#0369a1',
+                            }}>
+                              {rec.ingredient}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1304,6 +1604,13 @@ export default function TwachaDashboard() {
         isOpen={showAIChatModal}
         onClose={() => setShowAIChatModal(false)}
         scanContext={latestScan}
+      />
+
+      {/* Coming Soon Modal */}
+      <ComingSoonModal
+        isOpen={showComingSoon !== null}
+        onClose={() => setShowComingSoon(null)}
+        feature={showComingSoon || 'report'}
       />
 
       {/* Scan Reminder Settings Modal */}

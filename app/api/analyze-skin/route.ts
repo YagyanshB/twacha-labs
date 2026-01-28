@@ -24,9 +24,10 @@ Based on Step 1, assign quality scores:
 
 Quality Score < 40 (UNUSABLE):
 - Set status to "fail"
-- Do NOT provide skin analysis
+- STILL provide numeric scores (0-100) for all metrics, but mark ALL confidence as "low"
 - Explain what's wrong (too dark, too blurry, etc.)
 - Strongly recommend retaking with better conditions
+- IMPORTANT: Never return null for scores - estimate based on what you can see
 
 Quality Score 40-75 (STANDARD SELFIE):
 - Set status to "limited"
@@ -57,7 +58,7 @@ Return ONLY valid JSON (no markdown, no backticks, no explanation):
     "unusable_zones": [{"zone": "<zone>", "reason": "<why>"}]
   },
   "analysis": {
-    "overall_score": <0-100 or null if fail>,
+    "overall_score": <0-100, ALWAYS a number, never null>,
     "skin_type": "<oily|dry|combination|normal|unknown>",
     "confidence": "<high|medium|low>",
     "metrics": {

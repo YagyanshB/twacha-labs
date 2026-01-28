@@ -627,11 +627,21 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                 <>
                   <div
                     ref={dropZoneRef}
-                    className={`upload-zone ${isDragging ? 'dragging' : ''}`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
+                    className={`upload-zone ${isDragging ? 'dragging' : ''} ${!hasConsented ? 'opacity-50' : ''}`}
+                    onDragOver={hasConsented ? handleDragOver : (e) => e.preventDefault()}
+                    onDragLeave={hasConsented ? handleDragLeave : (e) => e.preventDefault()}
+                    onDrop={hasConsented ? handleDrop : (e) => e.preventDefault()}
+                    onClick={() => {
+                      if (!hasConsented) {
+                        alert('Please accept the medical disclaimer first');
+                        return;
+                      }
+                      fileInputRef.current?.click();
+                    }}
+                    style={{
+                      cursor: hasConsented ? 'pointer' : 'not-allowed',
+                      pointerEvents: hasConsented ? 'auto' : 'auto', // Keep auto to allow onClick alert
+                    }}
                   >
                     <div className="upload-zone-content">
                       <div className="upload-icon-wrapper">
@@ -646,6 +656,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                       type="file"
                       accept="image/*"
                       onChange={handleFileUpload}
+                      disabled={!hasConsented}
                       className="hidden"
                     />
                   </div>
