@@ -5,6 +5,7 @@ import { Camera, Upload, Check, Image as ImageIcon, X, Loader2, AlertCircle } fr
 import Webcam from 'react-webcam';
 import { uploadImageToSupabase } from '@/lib/image-upload';
 import MedicalDisclaimerModal from '../MedicalDisclaimerModal';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 // YCbCr-based skin color detection (works for all skin tones)
 function isSkinColor(r: number, g: number, b: number): boolean {
@@ -43,6 +44,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
     return null;
   }
 
+  const isMobile = useIsMobile();
   const [mode, setMode] = useState<Mode>('camera');
   const [validation, setValidation] = useState<ValidationState>({
     faceDetected: false,
@@ -542,27 +544,75 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
           </p>
         </div>
 
-        {/* Mode Tabs */}
-        <div className="mode-tabs">
+        {/* Mode Toggle - Always Visible */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '12px',
+          marginBottom: '24px',
+          paddingLeft: isMobile ? 'env(safe-area-inset-left)' : '0',
+          paddingRight: isMobile ? 'env(safe-area-inset-right)' : '0',
+        }}>
           <button
+            type="button"
             onClick={() => {
               setMode('camera');
               handleRetake();
             }}
-            className={`mode-tab ${mode === 'camera' ? 'active' : ''}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              padding: isMobile ? '16px 20px' : '14px 28px',
+              fontSize: '16px',
+              fontWeight: '600',
+              borderRadius: '100px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              background: mode === 'camera' ? '#0a0a0a' : '#ffffff',
+              color: mode === 'camera' ? '#ffffff' : '#444444',
+              border: mode === 'camera' ? '2px solid #0a0a0a' : '2px solid #e5e5e5',
+              flex: isMobile ? '1' : 'none',
+              minHeight: '48px',
+            }}
           >
-            <Camera className="mode-tab-icon" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
             Camera
           </button>
           <button
+            type="button"
             onClick={() => {
               setMode('upload');
               handleRetake();
             }}
-            className={`mode-tab ${mode === 'upload' ? 'active' : ''}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              padding: isMobile ? '16px 20px' : '14px 28px',
+              fontSize: '16px',
+              fontWeight: '600',
+              borderRadius: '100px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              background: mode === 'upload' ? '#0a0a0a' : '#ffffff',
+              color: mode === 'upload' ? '#ffffff' : '#444444',
+              border: mode === 'upload' ? '2px solid #0a0a0a' : '2px solid #e5e5e5',
+              flex: isMobile ? '1' : 'none',
+              minHeight: '48px',
+            }}
           >
-            <Upload className="mode-tab-icon" />
-            Upload
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Upload Photo
           </button>
         </div>
 
@@ -655,6 +705,7 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
+                      capture="user"
                       onChange={handleFileUpload}
                       disabled={!hasConsented}
                       className="hidden"
