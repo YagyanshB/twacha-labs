@@ -306,6 +306,8 @@ export default function TwachaDashboard() {
             // Update profile when name or other profile data changes
             console.log('Profile updated:', payload.new);
             setProfile(payload.new);
+            // Refresh scan allowance when profile updates (monthly_scans_used changed)
+            refresh();
           }
         )
         .subscribe();

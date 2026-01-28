@@ -8,26 +8,26 @@ const plans = [
     name: 'Free',
     price: '£0',
     description: 'Perfect for testing the waters.',
-    cta: 'Start free analysis',
-    href: '/analysis',
+    cta: 'Start Free Scan',
+    href: '/login',
     popular: false,
     features: [
-      '1 analysis per month',
-      'Basic acne detection',
+      '5 scans per month',
+      'Basic skin analysis',
       'General recommendations',
     ],
   },
   {
     name: 'Premium',
     price: '£8.99',
-    period: '/mo',
+    period: '/month',
     description: 'For serious skin progress.',
     cta: 'Go Premium',
-    href: 'https://buy.stripe.com/7sYeVd8gndhhckNghE24001',
+    href: '/login?plan=premium',
     popular: true,
-    subtext: 'Billed £49 yearly (Save 17%)',
+    subtext: 'Or £89.99/year (Save 17%)',
     features: [
-      'Unlimited analyses',
+      'Unlimited scans',
       'Advanced metrics (Texture, Aging)',
       'Progress tracking timeline',
       'Personalized routine builder',
@@ -40,7 +40,7 @@ const plans = [
     period: '/once',
     description: 'Deep-dive one-time analysis.',
     cta: 'Get Report',
-    href: 'https://buy.stripe.com/7sY6oHcwD1yz2KdfdA24002',
+    href: '/login?plan=report',
     popular: false,
     features: [
       'Full comprehensive report',
@@ -79,7 +79,7 @@ export default function PricingPage() {
               <li><Link href="/#how">How it works</Link></li>
               <li><Link href="/pricing">Pricing</Link></li>
             </ul>
-            <Link href="/analysis" className="scan-button">Start free</Link>
+            <Link href="/login" className="scan-button">Start Free Scan</Link>
           </div>
         </div>
       </nav>
@@ -110,8 +110,9 @@ export default function PricingPage() {
           <div className="footer-brand">Twacha Labs</div>
           <div className="footer-links">
             <a href="/privacy">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Contact</a>
+            <a href="/terms">Terms</a>
+            <a href="/subprocessors">Subprocessors</a>
+            <a href="/contact">Contact</a>
           </div>
         </div>
         <div className="footer-security">
@@ -164,15 +165,9 @@ function PricingCard({ plan }: { plan: typeof plans[0] }) {
         )}
 
         {/* Button - matches landing page primary-cta */}
-        {plan.name === 'Premium' || plan.name === 'Report' ? (
-          <a href={plan.href} target="_blank" rel="noopener noreferrer" className="primary-cta pricing-button">
-            {plan.cta}
-          </a>
-        ) : (
-          <Link href={plan.href} className="primary-cta pricing-button">
-            {plan.cta}
-          </Link>
-        )}
+        <Link href={plan.href} className="primary-cta pricing-button">
+          {plan.cta}
+        </Link>
 
         {/* Features List */}
         <ul className="pricing-features">
