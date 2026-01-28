@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 interface SkinAnalysisResultsProps {
   overallScore: number;
@@ -43,6 +45,16 @@ export default function SkinAnalysisResults({
   analysisData,
   upsell,
 }: SkinAnalysisResultsProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+  }, []);
 
   const qualityStatus = imageQuality?.status || 'pass';
   const qualityScore = imageQuality?.score || 100;
@@ -280,28 +292,29 @@ export default function SkinAnalysisResults({
             )}
 
             {/* Metrics Grid with Confidence */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              style={{
-                marginBottom: '24px',
-              }}
-            >
-              <h2 style={{
-                fontSize: '18px',
-                fontWeight: '600',
-                marginBottom: '16px',
-                color: '#0a0a0a',
-              }}>
-                Detailed Metrics
-              </h2>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '16px',
-              }}>
-                {Object.entries(metrics).map(([key, value]: [string, any], index) => {
+            {isAuthenticated ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                style={{
+                  marginBottom: '24px',
+                }}
+              >
+                <h2 style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  marginBottom: '16px',
+                  color: '#0a0a0a',
+                }}>
+                  Detailed Metrics
+                </h2>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                  gap: '16px',
+                }}>
+                  {Object.entries(metrics).map(([key, value]: [string, any], index) => {
                   const metricValue = typeof value === 'object' ? value.score : value;
                   const metricConfidence = typeof value === 'object' ? value.confidence : 'high';
 
@@ -377,6 +390,124 @@ export default function SkinAnalysisResults({
                 })}
               </div>
             </motion.div>
+            ) : (
+              /* Blurred metrics for non-authenticated users */
+              <div style={{ position: 'relative', marginBottom: '24px' }}>
+                <div style={{
+                  filter: 'blur(8px)',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}>
+                  <h2 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    marginBottom: '16px',
+                    color: '#0a0a0a',
+                  }}>
+                    Detailed Metrics
+                  </h2>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '16px',
+                  }}>
+                    {Object.entries(metrics).map(([key, value]: [string, any], index) => {
+                      const metricValue = typeof value === 'object' ? value.score : value;
+                      return (
+                        <div
+                          key={key}
+                          style={{
+                            background: 'white',
+                            borderRadius: '12px',
+                            padding: '20px',
+                            border: '1px solid #eee',
+                          }}
+                        >
+                          <div style={{
+                            fontSize: '13px',
+                            color: '#888',
+                            textTransform: 'capitalize',
+                            marginBottom: '12px',
+                          }}>
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '8px',
+                            background: '#f0f0f0',
+                            borderRadius: '4px',
+                            marginBottom: '8px',
+                          }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${metricValue}%`,
+                              background: getScoreColor(metricValue),
+                              borderRadius: '4px',
+                            }} />
+                          </div>
+                          <div style={{
+                            fontSize: '24px',
+                            fontWeight: '600',
+                            color: '#0a0a0a',
+                          }}>
+                            {metricValue}<span style={{ fontSize: '14px', color: '#999' }}>/100</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Overlay with sign up prompt */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(255,255,255,0.95)',
+                  borderRadius: '16px',
+                }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    background: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '16px',
+                  }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '12px', color: '#0a0a0a' }}>
+                    Want to see the full breakdown?
+                  </h3>
+                  <p style={{ color: '#666', marginBottom: '20px', textAlign: 'center', maxWidth: '400px', fontSize: '15px' }}>
+                    Sign up free to unlock detailed metrics and recommendations.
+                  </p>
+                  <button
+                    onClick={() => router.push('/login')}
+                    style={{
+                      padding: '14px 32px',
+                      background: '#0a0a0a',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '100px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '15px',
+                    }}
+                  >
+                    Create Free Account
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Issues */}
             {issues && issues.length > 0 && (
