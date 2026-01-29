@@ -8,43 +8,12 @@ import { Check } from 'lucide-react';
 const STRIPE_LINKS = {
   monthly: 'https://buy.stripe.com/7sYeVd8gndhhckNghE24001',
   annual: 'https://buy.stripe.com/4gM9ATbsz0uvacFc1o24003',
-  earlyBird: 'https://buy.stripe.com/3cI28r2W37WX0C5ghE24004',
 };
-
-interface EarlyBirdStatus {
-  available: boolean;
-  spotsRemaining: number;
-  spotsTaken: number;
-  percentageTaken: number;
-}
 
 export default function PricingPage() {
   const router = useRouter();
-  const [earlyBirdStatus, setEarlyBirdStatus] = useState<EarlyBirdStatus | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkEarlyBird = async () => {
-      try {
-        const res = await fetch('/api/early-bird-status');
-        const data = await res.json();
-        setEarlyBirdStatus(data);
-      } catch (error) {
-        console.error('Error checking early bird status:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkEarlyBird();
-  }, []);
-
-  const handlePlanSelect = (plan: 'monthly' | 'annual' | 'earlyBird') => {
-    if (plan === 'earlyBird' && earlyBirdStatus && !earlyBirdStatus.available) {
-      alert('Early bird offer has ended! Please choose Monthly or Annual.');
-      return;
-    }
-
+  const handlePlanSelect = (plan: 'monthly' | 'annual') => {
     // Redirect to Stripe
     window.location.href = STRIPE_LINKS[plan];
   };
@@ -89,90 +58,6 @@ export default function PricingPage() {
             <h1>Simple pricing</h1>
             <p>Start free. Upgrade when you're ready. Cancel anytime.</p>
           </div>
-
-          {/* Early Bird Banner */}
-          {!loading && earlyBirdStatus?.available && (
-            <div style={{
-              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-              borderRadius: '16px',
-              padding: '32px',
-              marginBottom: '32px',
-              textAlign: 'center',
-              border: '2px solid #f59e0b',
-            }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: '#f59e0b',
-                color: 'white',
-                padding: '6px 16px',
-                borderRadius: '100px',
-                fontSize: '13px',
-                fontWeight: '600',
-                marginBottom: '16px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-              }}>
-                🎉 EARLY BIRD OFFER
-              </div>
-
-              <h3 style={{
-                fontSize: '28px',
-                fontWeight: '700',
-                marginBottom: '12px',
-                color: '#0a0a0a',
-              }}>
-                First 100 users get lifetime discount!
-              </h3>
-
-              <p style={{
-                color: '#92400e',
-                marginBottom: '20px',
-                fontSize: '16px',
-              }}>
-                Only <strong style={{ fontSize: '20px' }}>{earlyBirdStatus.spotsRemaining}</strong> spots remaining
-              </p>
-
-              {/* Progress bar */}
-              <div style={{
-                width: '100%',
-                maxWidth: '500px',
-                height: '10px',
-                background: 'rgba(0,0,0,0.1)',
-                borderRadius: '100px',
-                margin: '0 auto 24px',
-                overflow: 'hidden',
-              }}>
-                <div style={{
-                  width: `${earlyBirdStatus.percentageTaken}%`,
-                  height: '100%',
-                  background: '#f59e0b',
-                  borderRadius: '100px',
-                  transition: 'width 0.5s ease',
-                }} />
-              </div>
-
-              <button
-                onClick={() => handlePlanSelect('earlyBird')}
-                style={{
-                  padding: '16px 48px',
-                  background: '#0a0a0a',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '100px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s ease',
-                }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                Claim Early Bird Price →
-              </button>
-            </div>
-          )}
 
           {/* Pricing Grid */}
           <div className="pricing-grid">
