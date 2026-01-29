@@ -360,32 +360,33 @@ export default function SettingsPage() {
           {/* Subscription Status */}
           <div style={{
             padding: '20px',
-            background: 'white',
+            background: '#fafafa',
             borderRadius: '12px',
             border: '1px solid #eee',
             marginBottom: '16px',
           }}>
-            <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+            <h4 style={{ fontWeight: '600', marginBottom: '4px', marginTop: 0, fontSize: '15px' }}>
               {profile.is_premium ? 'Premium Plan' : 'Free Plan'}
-            </div>
-            <div style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+            </h4>
+            <p style={{ color: '#666', fontSize: '14px', margin: 0, marginBottom: profile.is_premium ? 0 : '12px' }}>
               {profile.is_premium
                 ? 'Unlimited scans per month'
                 : `${Math.max(0, 5 - profile.monthly_scans_used)} of 5 scans remaining this month`
               }
-            </div>
+            </p>
 
             {!profile.is_premium && (
               <button
-                onClick={() => setShowUpgradeModal(true)}
+                onClick={() => router.push('/pricing')}
                 style={{
-                  padding: '12px 24px',
+                  marginTop: '12px',
+                  padding: '10px 20px',
                   background: '#0a0a0a',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   fontSize: '14px',
-                  fontWeight: '600',
+                  fontWeight: '500',
                   cursor: 'pointer',
                 }}
               >
