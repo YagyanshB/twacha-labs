@@ -14,6 +14,8 @@ export default function SettingsPage() {
     email: '',
     skin_goals: [] as string[],
     primary_goal: '',
+    is_premium: false,
+    monthly_scans_used: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -42,6 +44,8 @@ export default function SettingsPage() {
         email: data.email || user.email || '',
         skin_goals: data.skin_goals || [],
         primary_goal: data.primary_goal || '',
+        is_premium: data.is_premium || false,
+        monthly_scans_used: data.monthly_scans_used || 0,
       });
     }
     setIsLoading(false);
@@ -294,18 +298,39 @@ export default function SettingsPage() {
 
           {/* Subscription Status */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '16px',
-            background: '#f9f9f9',
+            padding: '20px',
+            background: '#fafafa',
             borderRadius: '12px',
             marginBottom: '16px',
           }}>
-            <div>
-              <p style={{ fontSize: '14px', fontWeight: 500, margin: 0, marginBottom: '4px' }}>Free Plan</p>
-              <p style={{ fontSize: '13px', color: '#888', margin: 0 }}>Unlimited scans per month</p>
-            </div>
+            <h4 style={{ fontWeight: '600', marginBottom: '4px', marginTop: 0, fontSize: '15px' }}>
+              {profile.is_premium ? 'Premium Plan' : 'Free Plan'}
+            </h4>
+            <p style={{ color: '#666', fontSize: '14px', margin: 0, marginBottom: profile.is_premium ? 0 : '12px' }}>
+              {profile.is_premium
+                ? 'Unlimited scans per month'
+                : `${Math.max(0, 5 - profile.monthly_scans_used)} of 5 scans remaining this month`
+              }
+            </p>
+
+            {!profile.is_premium && (
+              <button
+                onClick={() => router.push('/pricing')}
+                style={{
+                  marginTop: '12px',
+                  padding: '10px 20px',
+                  background: '#0a0a0a',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                }}
+              >
+                Upgrade to Premium
+              </button>
+            )}
           </div>
 
           {/* Logout Button */}
