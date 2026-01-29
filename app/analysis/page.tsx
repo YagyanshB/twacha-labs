@@ -242,6 +242,8 @@ export default function AnalysisPage() {
         throw new Error('Failed to save scan results');
       }
 
+      console.log('✅ Scan saved successfully:', scan.id);
+
       // Save issues to database
       if (result.analysis.issues_detected && result.analysis.issues_detected.length > 0) {
         const issues = result.analysis.issues_detected.map((issue) => ({
@@ -282,22 +284,34 @@ export default function AnalysisPage() {
       }
 
       // Note: Profile stats (total_scans, current_streak) are auto-updated by database trigger
-      // CRITICAL: Update monthly_scans_used counter for scan allowance
-      const { data: currentProfile } = await supabase
+      // CRITICAL: Manually update monthly_scans_used counter as backup (belt and suspenders approach)
+      const { data: currentProfile, error: profileFetchError } = await supabase
         .from('profiles')
         .select('monthly_scans_used, total_scans')
         .eq('id', user.id)
         .single();
 
-      if (currentProfile) {
-        await supabase
+      if (profileFetchError) {
+        console.error('⚠️ Error fetching profile for count update:', profileFetchError);
+      } else if (currentProfile) {
+        const newMonthlyCount = (currentProfile.monthly_scans_used || 0) + 1;
+        const newTotalCount = (currentProfile.total_scans || 0) + 1;
+
+        const { error: profileUpdateError } = await supabase
           .from('profiles')
           .update({
-            monthly_scans_used: (currentProfile.monthly_scans_used || 0) + 1,
-            total_scans: (currentProfile.total_scans || 0) + 1,
+            monthly_scans_used: newMonthlyCount,
+            total_scans: newTotalCount,
             last_scan_date: new Date().toISOString().split('T')[0],
+            updated_at: new Date().toISOString(),
           })
           .eq('id', user.id);
+
+        if (profileUpdateError) {
+          console.error('⚠️ Error updating profile count:', profileUpdateError);
+        } else {
+          console.log(`✅ Profile updated: ${newMonthlyCount} scans this month, ${newTotalCount} total`);
+        }
       }
 
       // Increment local usage counter for UI
