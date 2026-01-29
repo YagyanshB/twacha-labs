@@ -91,6 +91,11 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
   };
 
   const handleCapture = async () => {
+    if (!hasConsented) {
+      alert('Please accept the medical disclaimer first');
+      return;
+    }
+
     if (webcamRef.current) {
       // Allow capture even if conditions not met (for testing/fallback)
       const imageSrc = webcamRef.current.getScreenshot();
@@ -102,6 +107,11 @@ export default function CameraStep({ onCapture, onBack }: CameraStepProps) {
   };
 
   const handleFileSelect = async (file: File) => {
+    if (!hasConsented) {
+      alert('Please accept the medical disclaimer first');
+      return;
+    }
+
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = async () => {

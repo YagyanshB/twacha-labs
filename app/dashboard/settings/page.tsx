@@ -87,11 +87,14 @@ export default function SettingsPage() {
     if (error) {
       setMessage('Failed to save. Please try again.');
       console.error('Profile update error:', error);
+      setIsSaving(false);
     } else {
-      setMessage('Profile updated successfully!');
-      setTimeout(() => setMessage(''), 3000);
+      setMessage('Profile updated successfully! Refreshing...');
+      // Force refresh to update dashboard with new name
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     }
-    setIsSaving(false);
   };
 
   const handleLogout = async () => {
