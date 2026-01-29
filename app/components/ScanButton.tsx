@@ -52,7 +52,7 @@ export default function ScanButton({
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: i < scansUsed ? '#0a0a0a' : '#ddd',
+                  background: i < scansRemaining ? '#0a0a0a' : '#ddd',
                 }}
               />
             ))}
