@@ -1,60 +1,57 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 
-const plans = [
-  {
-    name: 'Free',
-    price: '£0',
-    description: 'Perfect for testing the waters.',
-    cta: 'Start Free Scan',
-    href: '/login',
-    popular: false,
-    features: [
-      '5 scans per month',
-      'Basic skin analysis',
-      'General recommendations',
-    ],
-  },
-  {
-    name: 'Premium',
-    price: '£8.99',
-    period: '/month',
-    description: 'For serious skin progress.',
-    cta: 'Go Premium',
-    href: '/login?plan=premium',
-    popular: true,
-    subtext: 'Or £89.99/year (Save 17%)',
-    features: [
-      'Unlimited scans',
-      'Advanced metrics (Texture, Aging)',
-      'Progress tracking timeline',
-      'Personalized routine builder',
-      'Priority support',
-    ],
-  },
-  {
-    name: 'Report',
-    price: '£14.99',
-    period: '/once',
-    description: 'Deep-dive one-time analysis.',
-    cta: 'Get Report',
-    href: '/login?plan=report',
-    popular: false,
-    features: [
-      'Full comprehensive report',
-      'Downloadable PDF',
-      'Shareable with dermatologists',
-      'Valid for 7 days',
-    ],
-  },
-];
+const STRIPE_LINKS = {
+  monthly: 'https://buy.stripe.com/7sYeVd8gndhhckNghE24001',
+  annual: 'https://buy.stripe.com/4gM9ATbsz0uvacFc1o24003',
+  earlyBird: 'https://buy.stripe.com/3cI28r2W37WX0C5ghE24004',
+};
+
+interface EarlyBirdStatus {
+  available: boolean;
+  spotsRemaining: number;
+  spotsTaken: number;
+  percentageTaken: number;
+}
 
 export default function PricingPage() {
+  const router = useRouter();
+  const [earlyBirdStatus, setEarlyBirdStatus] = useState<EarlyBirdStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkEarlyBird = async () => {
+      try {
+        const res = await fetch('/api/early-bird-status');
+        const data = await res.json();
+        setEarlyBirdStatus(data);
+      } catch (error) {
+        console.error('Error checking early bird status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkEarlyBird();
+  }, []);
+
+  const handlePlanSelect = (plan: 'monthly' | 'annual' | 'earlyBird') => {
+    if (plan === 'earlyBird' && earlyBirdStatus && !earlyBirdStatus.available) {
+      alert('Early bird offer has ended! Please choose Monthly or Annual.');
+      return;
+    }
+
+    // Redirect to Stripe
+    window.location.href = STRIPE_LINKS[plan];
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation - matches landing page */}
+      {/* Navigation */}
       <nav>
         <div className="nav-container">
           <Link href="/" className="logo">
@@ -84,27 +81,243 @@ export default function PricingPage() {
         </div>
       </nav>
 
-      {/* Pricing Section - matches landing page spacing and typography */}
+      {/* Main Content */}
       <section className="pricing-section">
         <div className="pricing-container">
-          {/* Header - matches hero typography scale */}
+          {/* Header */}
           <div className="pricing-header">
-            <h1>
-              Simple pricing
-            </h1>
+            <h1>Simple pricing</h1>
             <p>Start free. Upgrade when you're ready. Cancel anytime.</p>
           </div>
 
+          {/* Early Bird Banner */}
+          {!loading && earlyBirdStatus?.available && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+              borderRadius: '16px',
+              padding: '32px',
+              marginBottom: '32px',
+              textAlign: 'center',
+              border: '2px solid #f59e0b',
+            }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#f59e0b',
+                color: 'white',
+                padding: '6px 16px',
+                borderRadius: '100px',
+                fontSize: '13px',
+                fontWeight: '600',
+                marginBottom: '16px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}>
+                🎉 EARLY BIRD OFFER
+              </div>
+
+              <h3 style={{
+                fontSize: '28px',
+                fontWeight: '700',
+                marginBottom: '12px',
+                color: '#0a0a0a',
+              }}>
+                First 100 users get lifetime discount!
+              </h3>
+
+              <p style={{
+                color: '#92400e',
+                marginBottom: '20px',
+                fontSize: '16px',
+              }}>
+                Only <strong style={{ fontSize: '20px' }}>{earlyBirdStatus.spotsRemaining}</strong> spots remaining
+              </p>
+
+              {/* Progress bar */}
+              <div style={{
+                width: '100%',
+                maxWidth: '500px',
+                height: '10px',
+                background: 'rgba(0,0,0,0.1)',
+                borderRadius: '100px',
+                margin: '0 auto 24px',
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  width: `${earlyBirdStatus.percentageTaken}%`,
+                  height: '100%',
+                  background: '#f59e0b',
+                  borderRadius: '100px',
+                  transition: 'width 0.5s ease',
+                }} />
+              </div>
+
+              <button
+                onClick={() => handlePlanSelect('earlyBird')}
+                style={{
+                  padding: '16px 48px',
+                  background: '#0a0a0a',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '100px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease',
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Claim Early Bird Price →
+              </button>
+            </div>
+          )}
+
           {/* Pricing Grid */}
           <div className="pricing-grid">
-            {plans.map((plan) => (
-              <PricingCard key={plan.name} plan={plan} />
-            ))}
+            {/* Free Plan */}
+            <div className="pricing-card">
+              <div className="pricing-card-content">
+                <h3>Free</h3>
+                <p className="pricing-description">Perfect for testing the waters.</p>
+
+                <div className="pricing-price">
+                  <span className="price-amount">£0</span>
+                </div>
+
+                <Link href="/login" className="primary-cta pricing-button">
+                  Start Free Scan
+                </Link>
+
+                <ul className="pricing-features">
+                  {['5 scans per month', 'Basic skin analysis', 'General recommendations'].map((feature) => (
+                    <li key={feature}>
+                      <Check className="feature-icon" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Premium Plan */}
+            <div className="pricing-card pricing-card-popular">
+              <div className="popular-badge">Most Popular</div>
+
+              <div className="pricing-card-content">
+                <h3>Premium</h3>
+                <p className="pricing-description">For serious skin progress.</p>
+
+                <div className="pricing-price">
+                  <span className="price-amount">£6.99</span>
+                  <span className="price-period">/month</span>
+                </div>
+
+                <p className="pricing-subtext">Or £49/year (Save 42%)</p>
+
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  marginBottom: '24px',
+                  width: '100%',
+                }}>
+                  <button
+                    onClick={() => handlePlanSelect('monthly')}
+                    style={{
+                      flex: 1,
+                      padding: '14px 20px',
+                      background: 'white',
+                      color: '#0a0a0a',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => handlePlanSelect('annual')}
+                    style={{
+                      flex: 1,
+                      padding: '14px 20px',
+                      background: 'rgba(255,255,255,0.1)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Annual
+                  </button>
+                </div>
+
+                <ul className="pricing-features">
+                  {[
+                    'Unlimited scans',
+                    'Advanced metrics (Texture, Aging)',
+                    'Progress tracking timeline',
+                    'Personalized routine builder',
+                    'Priority support',
+                  ].map((feature) => (
+                    <li key={feature}>
+                      <Check className="feature-icon" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Report Plan */}
+            <div className="pricing-card">
+              <div className="pricing-card-content">
+                <h3>Report</h3>
+                <p className="pricing-description">Deep-dive one-time analysis.</p>
+
+                <div className="pricing-price">
+                  <span className="price-amount">£14.99</span>
+                  <span className="price-period">/once</span>
+                </div>
+
+                <Link href="/login?plan=report" className="primary-cta pricing-button">
+                  Get Report
+                </Link>
+
+                <ul className="pricing-features">
+                  {[
+                    'Full comprehensive report',
+                    'Downloadable PDF',
+                    'Shareable with dermatologists',
+                    'Valid for 7 days',
+                  ].map((feature) => (
+                    <li key={feature}>
+                      <Check className="feature-icon" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Trust badges */}
+          <div style={{
+            textAlign: 'center',
+            marginTop: '48px',
+            color: '#888',
+            fontSize: '14px',
+          }}>
+            <p>🔒 Secure payment via Stripe • Cancel anytime • No hidden fees</p>
           </div>
         </div>
       </section>
 
-      {/* Footer - matches landing page */}
+      {/* Footer */}
       <footer>
         <div className="footer-content">
           <div className="footer-brand">Twacha Labs</div>
@@ -135,50 +348,6 @@ export default function PricingPage() {
           </div>
         </div>
       </footer>
-    </div>
-  );
-}
-
-function PricingCard({ plan }: { plan: typeof plans[0] }) {
-  return (
-    <div
-      className={`pricing-card ${plan.popular ? 'pricing-card-popular' : ''}`}
-    >
-      {/* Most Popular Badge - centered at top */}
-      {plan.popular && (
-        <div className="popular-badge">Most Popular</div>
-      )}
-
-      <div className="pricing-card-content">
-        <h3>{plan.name}</h3>
-        <p className="pricing-description">{plan.description}</p>
-        
-        <div className="pricing-price">
-          <span className="price-amount">{plan.price}</span>
-          {plan.period && (
-            <span className="price-period">{plan.period}</span>
-          )}
-        </div>
-
-        {plan.subtext && (
-          <p className="pricing-subtext">{plan.subtext}</p>
-        )}
-
-        {/* Button - matches landing page primary-cta */}
-        <Link href={plan.href} className="primary-cta pricing-button">
-          {plan.cta}
-        </Link>
-
-        {/* Features List */}
-        <ul className="pricing-features">
-          {plan.features.map((feature) => (
-            <li key={feature}>
-              <Check className="feature-icon" />
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
     </div>
   );
 }
