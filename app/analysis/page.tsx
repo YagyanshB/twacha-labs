@@ -206,6 +206,11 @@ export default function AnalysisPage() {
         return;
       }
 
+      console.log('=== SCAN DEBUG ===');
+      console.log('User ID:', user.id);
+      console.log('Analysis overall score:', result.analysis?.overall_score);
+      console.log('Analysis result structure:', Object.keys(result));
+
       // Save scan to database with full analysis data
       const { data: scan, error: scanError } = await supabase
         .from('scans')
@@ -294,10 +299,12 @@ export default function AnalysisPage() {
       if (profileFetchError) {
         console.error('⚠️ Error fetching profile for count update:', profileFetchError);
       } else if (currentProfile) {
+        console.log('Current profile before update:', currentProfile);
+
         const newMonthlyCount = (currentProfile.monthly_scans_used || 0) + 1;
         const newTotalCount = (currentProfile.total_scans || 0) + 1;
 
-        const { error: profileUpdateError } = await supabase
+        const { data: updatedProfile, error: profileUpdateError } = await supabase
           .from('profiles')
           .update({
             monthly_scans_used: newMonthlyCount,
@@ -305,14 +312,19 @@ export default function AnalysisPage() {
             last_scan_date: new Date().toISOString().split('T')[0],
             updated_at: new Date().toISOString(),
           })
-          .eq('id', user.id);
+          .eq('id', user.id)
+          .select()
+          .single();
 
         if (profileUpdateError) {
           console.error('⚠️ Error updating profile count:', profileUpdateError);
         } else {
           console.log(`✅ Profile updated: ${newMonthlyCount} scans this month, ${newTotalCount} total`);
+          console.log('Profile after update:', updatedProfile);
         }
       }
+
+      console.log('=== END SCAN DEBUG ===');
 
       // Increment local usage counter for UI
       incrementUsage(user.id);
