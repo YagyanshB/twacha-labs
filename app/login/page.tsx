@@ -15,6 +15,41 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  // CRITICAL: Ensure profile exists for user (auth trigger is disabled)
+  const ensureProfileExists = async (user: any) => {
+    try {
+      // Check if profile exists
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      // Create if missing
+      if (!existing) {
+        const { error } = await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || null,
+          monthly_scans_used: 0,
+          total_scans: 0,
+          is_premium: false,
+          onboarding_completed: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        if (error) {
+          console.error('Error creating profile:', error);
+        } else {
+          console.log('✅ Created profile for:', user.email);
+        }
+      }
+    } catch (err) {
+      console.error('Error in ensureProfileExists:', err);
+    }
+  };
+
   // Google Sign In
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -39,7 +74,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -48,6 +83,10 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
+      // CRITICAL: Ensure profile exists (auth trigger is disabled)
+      if (data.user) {
+        await ensureProfileExists(data.user);
+      }
       router.push('/dashboard');
     }
   };
@@ -58,7 +97,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -69,6 +108,10 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
+      // CRITICAL: Ensure profile exists (auth trigger is disabled)
+      if (data.user) {
+        await ensureProfileExists(data.user);
+      }
       setMessage('Check your email to confirm your account!');
     }
     setLoading(false);
