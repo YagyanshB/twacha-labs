@@ -547,10 +547,10 @@ export default function MacroLensComparison() {
               Twacha Labs Macro Kit
             </h3>
             <p style={{ color: 'rgba(255,255,255,0.7)', maxWidth: '400px', fontSize: '15px' }}>
-              Universal clip-on 15x lens with LED ring light. Works with any smartphone.
+              Get closer, clearer skin analysis with our clip-on macro lens.
             </p>
             <div style={{ display: 'flex', gap: '20px', marginTop: '16px', flexWrap: 'wrap' }}>
-              {['15x magnification', 'LED ring light', 'Universal fit'].map((feature, i) => (
+              {['15x Magnification Lens', 'Universal Fit (works with any phone)'].map((feature, i) => (
                 <span key={i} style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
                     <polyline points="20 6 9 17 4 12"/>
@@ -562,11 +562,8 @@ export default function MacroLensComparison() {
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', textDecoration: 'line-through' }}>
-              £29.99
-            </div>
             <div style={{ fontSize: '36px', fontWeight: '700', color: 'white', marginBottom: '12px' }}>
-              £19.99
+              £24.99
             </div>
             <button style={{
               padding: '14px 32px',

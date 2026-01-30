@@ -617,7 +617,7 @@ export default function SkinAnalysisResults({
                 </h3>
 
                 <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)', marginBottom: '16px', lineHeight: 1.6 }}>
-                  {upsell.message || "Standard phone cameras miss 40% of early-stage skin issues. The Twacha Pro Kit gives you consistent lighting and 15x magnification for pore-level analysis."}
+                  {upsell.message || "Standard phone cameras miss 40% of early-stage skin issues. The Twacha Pro Kit gives you 15x magnification for pore-level analysis."}
                 </p>
 
                 <div style={{
@@ -626,7 +626,7 @@ export default function SkinAnalysisResults({
                   marginBottom: '16px',
                   flexWrap: 'wrap',
                 }}>
-                  {['15x Macro Lens', 'Ring Light', '94% Accuracy'].map((feature, i) => (
+                  {['15x Magnification Lens', 'Universal Fit', '94% Accuracy'].map((feature, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
                         <polyline points="20 6 9 17 4 12"/>
@@ -654,7 +654,7 @@ export default function SkinAnalysisResults({
                     gap: '8px',
                   }}
                 >
-                  Get Pro Kit - £19.99
+                  Get Pro Kit - £24.99
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                   </svg>
