@@ -226,35 +226,131 @@ export default function Home() {
 
 // Navigation
 function Navbar({ onStartScan }: { onStartScan: () => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <nav>
-      <div className="nav-container">
-        <a href="#" className="logo" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-          <svg className="logo-mark" viewBox="0 0 40 40">
-            <g transform="translate(10, 10)" fill="#000">
-              <circle cx="10" cy="10" r="2"/>
-              <circle cx="10" cy="4" r="1.5" opacity="0.8"/>
-              <circle cx="16" cy="10" r="1.5" opacity="0.8"/>
-              <circle cx="10" cy="16" r="1.5" opacity="0.8"/>
-              <circle cx="4" cy="10" r="1.5" opacity="0.8"/>
-              <circle cx="6" cy="6" r="1" fill="#0066ff"/>
-              <circle cx="14" cy="6" r="1" fill="#0066ff"/>
-              <circle cx="14" cy="14" r="1" fill="#0066ff"/>
-              <circle cx="6" cy="14" r="1" fill="#0066ff"/>
-              <path d="M4 10 L16 10 M10 4 L10 16" stroke="#000" strokeWidth="0.5" opacity="0.3"/>
-            </g>
-          </svg>
-          <span className="logo-text">Twacha Labs</span>
-        </a>
-        <div className="nav-right">
-          <ul className="nav-links">
-            <li><a href="#how" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' }); }}>How it works</a></li>
-            <li><a href="/pricing" onClick={(e) => { e.preventDefault(); window.location.href = '/pricing'; }}>Pricing</a></li>
-          </ul>
-          <Link href="/login" className="scan-button">Start Free Scan</Link>
+    <>
+      <nav style={{
+        position: 'sticky',
+        top: 0,
+        background: 'white',
+        borderBottom: '1px solid #eee',
+        zIndex: 100,
+        padding: '16px 20px',
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          maxWidth: '1200px',
+          margin: '0 auto',
+        }}>
+          <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            textDecoration: 'none',
+            color: '#0a0a0a',
+          }}>
+            <span style={{ opacity: 0.5 }}>✦</span>
+            <span style={{ fontWeight: '600', fontSize: '18px' }}>Twacha Labs</span>
+          </a>
+
+          {/* Desktop: Show full nav */}
+          <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <a href="#how" onClick={(e) => { e.preventDefault(); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' }); }} style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>
+              How it works
+            </a>
+            <a href="/pricing" onClick={(e) => { e.preventDefault(); window.location.href = '/pricing'; }} style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>
+              Pricing
+            </a>
+            <Link href="/login" style={{
+              padding: '10px 20px',
+              background: '#0a0a0a',
+              color: 'white',
+              border: 'none',
+              borderRadius: '100px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              textDecoration: 'none',
+            }}>
+              Start Free Scan
+            </Link>
+          </div>
+
+          {/* Mobile: Hamburger only */}
+          <button
+            className="mobile-only"
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{
+              padding: '8px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
+              {menuOpen ? <path d="M18 6L6 18M6 6l12 12"/> : <path d="M3 12h18M3 6h18M3 18h18"/>}
+            </svg>
+          </button>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div style={{
+          position: 'fixed',
+          top: '60px',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'white',
+          zIndex: 99,
+          padding: '24px 20px',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <a href="#how" onClick={(e) => { e.preventDefault(); setMenuOpen(false); document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' }); }}
+              style={{ fontSize: '18px', color: '#0a0a0a', textDecoration: 'none', padding: '12px 0' }}>
+              How it works
+            </a>
+            <a href="/pricing" onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.location.href = '/pricing'; }}
+              style={{ fontSize: '18px', color: '#0a0a0a', textDecoration: 'none', padding: '12px 0' }}>
+              Pricing
+            </a>
+            <Link href="/login" onClick={() => setMenuOpen(false)}
+              style={{
+                width: '100%',
+                padding: '16px',
+                background: '#0a0a0a',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '16px',
+                fontWeight: '600',
+                marginTop: '12px',
+                textAlign: 'center',
+                textDecoration: 'none',
+                display: 'block',
+              }}
+            >
+              Start Free Scan
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @media (max-width: 768px) {
+          .desktop-only { display: none !important; }
+          .mobile-only { display: block !important; }
+        }
+        @media (min-width: 769px) {
+          .desktop-only { display: flex !important; }
+          .mobile-only { display: none !important; }
+        }
+      `}</style>
+    </>
   );
 }
 

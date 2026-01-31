@@ -528,7 +528,13 @@ export default function TwachaDashboard() {
           marginBottom: '32px',
           borderBottom: '1px solid #eee',
           paddingBottom: '0',
-        }}>
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+        className="hide-scrollbar"
+        >
           {['overview', 'issues', 'progress', 'recommendations'].map(tab => (
             <button
               key={tab}
@@ -544,6 +550,8 @@ export default function TwachaDashboard() {
                 cursor: 'pointer',
                 textTransform: 'capitalize',
                 marginBottom: '-1px',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               {tab}
@@ -1381,27 +1389,36 @@ export default function TwachaDashboard() {
                     background: 'white',
                     border: rec.priority === 'high' ? '2px solid #0a0a0a' : '1px solid #eee',
                     borderRadius: '16px',
-                    padding: '24px',
+                    padding: '20px',
                     display: 'flex',
-                    gap: '20px',
+                    gap: '14px',
+                    alignItems: 'flex-start',
                   }}
                 >
                   <div style={{
-                    width: '48px',
-                    height: '48px',
+                    width: '44px',
+                    height: '44px',
                     background: '#f5f5f5',
                     borderRadius: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '24px',
+                    fontSize: '20px',
                     flexShrink: 0,
                   }}>
                     {rec.icon}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: '600' }}>{rec.title}</h3>
+                  <div style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                      <h3 style={{
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
+                      }}>{rec.title}</h3>
                       {rec.priority === 'high' && (
                         <span style={{
                           padding: '2px 8px',
@@ -1416,7 +1433,14 @@ export default function TwachaDashboard() {
                         </span>
                       )}
                     </div>
-                    <p style={{ color: '#666', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
+                    <p style={{
+                      color: '#666',
+                      fontSize: '13px',
+                      lineHeight: 1.6,
+                      marginBottom: '16px',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'break-word',
+                    }}>
                       {rec.description}
                     </p>
                     <button

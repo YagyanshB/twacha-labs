@@ -1707,3 +1707,59 @@ footer {
     font-size: 18px;
   }
 }
+
+/* Hide scrollbars globally */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent text overflow globally */
+p, h1, h2, h3, h4, h5, h6, span, div {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Safe area for iPhone notch */
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 20px), 20px);
+}
+
+.safe-top {
+  padding-top: max(env(safe-area-inset-top, 20px), 20px);
+}
+
+.safe-left {
+  padding-left: max(env(safe-area-inset-left, 20px), 20px);
+}
+
+.safe-right {
+  padding-right: max(env(safe-area-inset-right, 20px), 20px);
+}
+
+/* Mobile Camera Optimization - Larger View */
+@media (max-width: 768px) {
+  .camera-view {
+    max-width: 100%;
+    min-height: 400px;
+    flex: 1;
+  }
+
+  .camera-step-content {
+    min-height: calc(100vh - 120px);
+    min-height: calc(100dvh - 120px);
+  }
+
+  .funnel-content.camera-funnel-content {
+    padding: 1rem 0.5rem;
+  }
+
+  .camera-feed,
+  .captured-image {
+    min-height: 400px;
+  }
+}
