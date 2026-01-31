@@ -252,7 +252,20 @@ function Navbar({ onStartScan }: { onStartScan: () => void }) {
             textDecoration: 'none',
             color: '#0a0a0a',
           }}>
-            <span style={{ opacity: 0.5 }}>✦</span>
+            <svg width="35" height="35" viewBox="0 0 40 40">
+              <g transform="translate(10, 10)" fill="#000">
+                <circle cx="10" cy="10" r="2"/>
+                <circle cx="10" cy="4" r="1.5" opacity="0.8"/>
+                <circle cx="16" cy="10" r="1.5" opacity="0.8"/>
+                <circle cx="10" cy="16" r="1.5" opacity="0.8"/>
+                <circle cx="4" cy="10" r="1.5" opacity="0.8"/>
+                <circle cx="6" cy="6" r="1" fill="#0066ff"/>
+                <circle cx="14" cy="6" r="1" fill="#0066ff"/>
+                <circle cx="14" cy="14" r="1" fill="#0066ff"/>
+                <circle cx="6" cy="14" r="1" fill="#0066ff"/>
+                <path d="M4 10 L16 10 M10 4 L10 16" stroke="#000" strokeWidth="0.5" opacity="0.3"/>
+              </g>
+            </svg>
             <span style={{ fontWeight: '600', fontSize: '18px' }}>Twacha Labs</span>
           </a>
 
