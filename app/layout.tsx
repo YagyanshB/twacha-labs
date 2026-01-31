@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const playfairDisplay = Playfair_Display({
-  variable: "--font-serif",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const inter = Inter({
+// Use system fonts as fallback (Google Fonts blocked in build env)
+const fontSans = {
   variable: "--font-sans",
-  subsets: ["latin"],
-});
+  className: "",
+};
+
+const fontSerif = {
+  variable: "--font-serif",
+  className: "",
+};
 
 export const metadata: Metadata = {
   title: "Twacha Labs - Skin Analysis Reimagined",
@@ -51,7 +50,10 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${playfairDisplay.variable} ${inter.variable} antialiased`}
+        className="antialiased"
+        style={{
+          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        }}
       >
         {children}
       </body>
