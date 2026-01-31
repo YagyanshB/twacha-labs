@@ -4,15 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-const STRIPE_LINKS = {
-  monthly: 'https://buy.stripe.com/7sYeVd8gndhhckNghE24001',
-  annual: 'https://buy.stripe.com/4gM9ATbsz0uvacFc1o24003',
-};
-
 export default function PricingPage() {
   const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Pricing calculations
   const monthlyPrice = 8.99;
@@ -256,7 +252,7 @@ export default function PricingPage() {
               </div>
 
               <button
-                onClick={() => window.location.href = STRIPE_LINKS[billingCycle]}
+                onClick={() => setShowPaymentModal(true)}
                 style={{
                   width: '100%',
                   padding: '14px',
@@ -361,10 +357,145 @@ export default function PricingPage() {
 
           {/* Footer */}
           <p style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
-            🔒 Secure payment via Stripe • Cancel anytime • No hidden fees
+            🔒 Secure payment processing • Cancel anytime • No hidden fees
           </p>
         </div>
       </main>
+
+      {/* Payment Coming Soon Modal */}
+      {showPaymentModal && (
+        <div
+          onClick={() => setShowPaymentModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: '24px',
+              maxWidth: '400px',
+              width: '100%',
+              padding: '40px 32px',
+              textAlign: 'center',
+              position: 'relative',
+            }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: 'none',
+                background: '#f5f5f5',
+                cursor: 'pointer',
+                fontSize: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ×
+            </button>
+
+            {/* Icon */}
+            <div style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              background: '#f5f5f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px',
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                <line x1="1" y1="10" x2="23" y2="10"/>
+              </svg>
+            </div>
+
+            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
+              Premium Coming Soon
+            </h2>
+            <p style={{
+              fontSize: '15px',
+              color: '#666',
+              marginBottom: '28px',
+              lineHeight: 1.6
+            }}>
+              We're setting up secure payment processing. Premium features will be available very soon!
+            </p>
+
+            {/* Features */}
+            <div style={{
+              background: '#f9fafb',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '28px',
+              textAlign: 'left',
+            }}>
+              <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px', fontWeight: '600' }}>
+                WHAT YOU'LL GET WITH PREMIUM
+              </p>
+              {[
+                'Unlimited scans',
+                'Advanced metrics tracking',
+                'Progress timeline',
+                'Priority support',
+              ].map((f) => (
+                <div key={f} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  fontSize: '14px',
+                  marginBottom: '8px',
+                  color: '#444',
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  {f}
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: '#0a0a0a',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              Got it
+            </button>
+
+            <p style={{ fontSize: '13px', color: '#888', marginTop: '16px' }}>
+              In the meantime, enjoy unlimited free scans!
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Report Coming Soon Modal */}
       {showReportModal && (
