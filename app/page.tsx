@@ -534,20 +534,69 @@ function FinalCTASection({ onStartScan }: { onStartScan: () => void }) {
   );
 }
 
-// Footer
+// Footer - Responsive
 function Footer() {
   return (
-    <footer>
-      <div className="footer-content">
-        <div className="footer-brand">Twacha Labs</div>
-        <div className="footer-links">
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/subprocessors">Subprocessors</Link>
-          <Link href="/contact">Contact</Link>
+    <footer style={{
+      background: '#0a0a0a',
+      padding: '40px 20px',
+      color: 'white',
+    }}>
+      <div style={{
+        maxWidth: '600px',
+        margin: '0 auto',
+        textAlign: 'center',
+      }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '24px' }}>
+          Twacha Labs
+        </h3>
+
+        {/* Links - Use flex-wrap to prevent breaking */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: '16px 24px', // row gap, column gap
+          marginBottom: '24px',
+        }}>
+          <Link href="/privacy" style={{
+            color: 'rgba(255,255,255,0.7)',
+            textDecoration: 'none',
+            fontSize: '14px',
+            whiteSpace: 'nowrap', // Prevent text breaking
+          }}>
+            Privacy
+          </Link>
+          <Link href="/terms" style={{
+            color: 'rgba(255,255,255,0.7)',
+            textDecoration: 'none',
+            fontSize: '14px',
+            whiteSpace: 'nowrap',
+          }}>
+            Terms
+          </Link>
+          <Link href="/subprocessors" style={{
+            color: 'rgba(255,255,255,0.7)',
+            textDecoration: 'none',
+            fontSize: '14px',
+            whiteSpace: 'nowrap',
+          }}>
+            Subprocessors
+          </Link>
+          <Link href="/contact" style={{
+            color: 'rgba(255,255,255,0.7)',
+            textDecoration: 'none',
+            fontSize: '14px',
+            whiteSpace: 'nowrap',
+          }}>
+            Contact
+          </Link>
         </div>
+
+        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+          © 2026 Twacha Labs. All rights reserved.
+        </p>
       </div>
-      <div className="mt-4 text-center"></div>
     </footer>
   );
 }
