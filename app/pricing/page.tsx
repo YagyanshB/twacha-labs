@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function PricingPage() {
   const router = useRouter();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [showReportModal, setShowReportModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -17,15 +17,15 @@ export default function PricingPage() {
   const savingsPercent = Math.round((1 - annualPrice / (monthlyPrice * 12)) * 100); // 17%
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafafa' }}>
+    <div style={{ minHeight: '100vh', background: 'white' }}>
       {/* Header */}
-      <header style={{
-        padding: '20px 24px',
-        borderBottom: '1px solid #eee',
+      <nav style={{
+        padding: '20px 40px',
+        borderBottom: '1px solid #e5e5e5',
         background: 'white',
       }}>
         <div style={{
-          maxWidth: '1100px',
+          maxWidth: '1200px',
           margin: '0 auto',
           display: 'flex',
           justifyContent: 'space-between',
@@ -40,7 +40,7 @@ export default function PricingPage() {
             alignItems: 'center',
             gap: '8px',
           }}>
-            <svg width="35" height="35" viewBox="0 0 40 40">
+            <svg width="24" height="24" viewBox="0 0 40 40">
               <g transform="translate(10, 10)" fill="#000">
                 <circle cx="10" cy="10" r="2"/>
                 <circle cx="10" cy="4" r="1.5" opacity="0.8"/>
@@ -56,17 +56,17 @@ export default function PricingPage() {
             </svg>
             <span>Twacha Labs</span>
           </Link>
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
             <Link href="/#how-it-works" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>
               How it works
             </Link>
-            <Link href="/pricing" style={{ color: '#0a0a0a', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>
+            <Link href="/pricing" style={{ color: '#0a0a0a', textDecoration: 'none', fontSize: '14px' }}>
               Pricing
             </Link>
             <button
               onClick={() => router.push('/login')}
               style={{
-                padding: '10px 20px',
+                padding: '10px 24px',
                 background: '#0a0a0a',
                 color: 'white',
                 border: 'none',
@@ -78,19 +78,19 @@ export default function PricingPage() {
             >
               Start Free Scan
             </button>
-          </nav>
+          </div>
         </div>
-      </header>
+      </nav>
 
       {/* Main Content */}
-      <main style={{ padding: '60px 24px 80px' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      <main style={{ padding: '80px 40px 100px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
           {/* Title */}
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <h1 style={{ fontSize: '48px', fontWeight: '700', marginBottom: '16px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+            <h1 style={{ fontSize: '56px', fontWeight: '700', marginBottom: '16px', color: '#0a0a0a', letterSpacing: '-1px' }}>
               Simple pricing
             </h1>
-            <p style={{ fontSize: '18px', color: '#666' }}>
+            <p style={{ fontSize: '18px', color: '#666', fontWeight: '400' }}>
               Start free. Upgrade when you're ready. Cancel anytime.
             </p>
           </div>
@@ -98,59 +98,59 @@ export default function PricingPage() {
           {/* Pricing Cards */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '24px',
-            maxWidth: '900px',
-            margin: '0 auto 48px',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '32px',
+            maxWidth: '1100px',
+            margin: '0 auto',
           }}>
             {/* Free Plan */}
             <div style={{
               background: 'white',
-              borderRadius: '24px',
-              padding: '32px',
+              borderRadius: '20px',
+              padding: '40px 32px',
               border: '1px solid #e5e5e5',
             }}>
-              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px', color: '#0a0a0a' }}>
                 Free
               </h3>
-              <p style={{ color: '#666', marginBottom: '24px', fontSize: '15px' }}>
-                Perfect for trying it out.
+              <p style={{ color: '#666', marginBottom: '32px', fontSize: '14px', minHeight: '20px' }}>
+                Perfect for testing the waters.
               </p>
 
-              <div style={{ marginBottom: '24px' }}>
-                <span style={{ fontSize: '40px', fontWeight: '700' }}>Free</span>
-                <span style={{ color: '#888', marginLeft: '8px', fontSize: '15px' }}>forever</span>
+              <div style={{ marginBottom: '32px' }}>
+                <span style={{ fontSize: '48px', fontWeight: '700', color: '#0a0a0a' }}>£0</span>
               </div>
 
               <button
                 onClick={() => router.push('/login')}
                 style={{
                   width: '100%',
-                  padding: '14px',
-                  background: 'white',
-                  color: '#0a0a0a',
-                  border: '2px solid #e5e5e5',
+                  padding: '16px',
+                  background: '#0a0a0a',
+                  color: 'white',
+                  border: 'none',
                   borderRadius: '12px',
                   fontSize: '15px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  marginBottom: '24px',
+                  marginBottom: '32px',
                 }}
               >
-                Get Started
+                Start Free Scan
               </button>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                 {['5 scans per month', 'Basic skin analysis', 'General recommendations'].map((f) => (
                   <li key={f} style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
+                    alignItems: 'flex-start',
+                    gap: '12px',
                     marginBottom: '12px',
                     fontSize: '14px',
                     color: '#444',
+                    lineHeight: '1.5',
                   }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" style={{ flexShrink: 0, marginTop: '2px' }}>
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     {f}
@@ -163,45 +163,46 @@ export default function PricingPage() {
             <div style={{
               background: '#0a0a0a',
               color: 'white',
-              borderRadius: '24px',
-              padding: '32px',
+              borderRadius: '20px',
+              padding: '40px 32px',
               position: 'relative',
+              border: 'none',
             }}>
               <div style={{
                 position: 'absolute',
-                top: '-12px',
+                top: '-14px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 background: 'white',
                 color: '#0a0a0a',
-                padding: '6px 16px',
+                padding: '6px 20px',
                 borderRadius: '100px',
-                fontSize: '12px',
-                fontWeight: '600',
+                fontSize: '11px',
+                fontWeight: '700',
+                letterSpacing: '0.5px',
               }}>
                 MOST POPULAR
               </div>
 
-              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>
                 Premium
               </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '24px', fontSize: '15px' }}>
+              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '32px', fontSize: '14px', minHeight: '20px' }}>
                 For serious skin progress.
               </p>
 
               {/* Billing Toggle */}
               <div style={{
-                display: 'flex',
+                display: 'inline-flex',
                 background: 'rgba(255,255,255,0.1)',
                 borderRadius: '10px',
                 padding: '4px',
-                marginBottom: '20px',
+                marginBottom: '24px',
               }}>
                 <button
                   onClick={() => setBillingCycle('monthly')}
                   style={{
-                    flex: 1,
-                    padding: '10px 12px',
+                    padding: '10px 24px',
                     background: billingCycle === 'monthly' ? 'white' : 'transparent',
                     color: billingCycle === 'monthly' ? '#0a0a0a' : 'rgba(255,255,255,0.7)',
                     border: 'none',
@@ -217,8 +218,7 @@ export default function PricingPage() {
                 <button
                   onClick={() => setBillingCycle('annual')}
                   style={{
-                    flex: 1,
-                    padding: '10px 12px',
+                    padding: '10px 24px',
                     background: billingCycle === 'annual' ? 'white' : 'transparent',
                     color: billingCycle === 'annual' ? '#0a0a0a' : 'rgba(255,255,255,0.7)',
                     border: 'none',
@@ -227,41 +227,24 @@ export default function PricingPage() {
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
                   }}
                 >
                   Annual
-                  <span style={{
-                    padding: '2px 6px',
-                    background: billingCycle === 'annual' ? '#22c55e' : 'rgba(34,197,94,0.3)',
-                    color: 'white',
-                    borderRadius: '4px',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                  }}>
-                    -{savingsPercent}%
-                  </span>
                 </button>
               </div>
 
               {/* Price Display */}
-              <div style={{ marginBottom: '24px' }}>
-                {billingCycle === 'monthly' ? (
-                  <>
-                    <span style={{ fontSize: '40px', fontWeight: '700' }}>£{monthlyPrice}</span>
-                    <span style={{ opacity: 0.7, fontSize: '15px' }}>/month</span>
-                  </>
-                ) : (
-                  <>
-                    <span style={{ fontSize: '40px', fontWeight: '700' }}>£{annualMonthly}</span>
-                    <span style={{ opacity: 0.7, fontSize: '15px' }}>/month</span>
-                    <p style={{ fontSize: '13px', opacity: 0.6, marginTop: '4px' }}>
-                      £{annualPrice} billed annually
-                    </p>
-                  </>
+              <div style={{ marginBottom: '32px' }}>
+                <div style={{ marginBottom: '8px' }}>
+                  <span style={{ fontSize: '48px', fontWeight: '700' }}>
+                    £{billingCycle === 'monthly' ? monthlyPrice : annualMonthly}
+                  </span>
+                  <span style={{ fontSize: '18px', opacity: 0.7, marginLeft: '4px' }}>/month</span>
+                </div>
+                {billingCycle === 'annual' && (
+                  <p style={{ fontSize: '14px', opacity: 0.7, margin: 0 }}>
+                    Or £{annualPrice}/year (Save {savingsPercent}%)
+                  </p>
                 )}
               </div>
 
@@ -269,7 +252,7 @@ export default function PricingPage() {
                 onClick={() => setShowPaymentModal(true)}
                 style={{
                   width: '100%',
-                  padding: '14px',
+                  padding: '16px',
                   background: 'white',
                   color: '#0a0a0a',
                   border: 'none',
@@ -277,10 +260,10 @@ export default function PricingPage() {
                   fontSize: '15px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  marginBottom: '24px',
+                  marginBottom: '32px',
                 }}
               >
-                {billingCycle === 'annual' ? 'Get Annual Plan' : 'Go Premium'}
+                Go Premium
               </button>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -293,12 +276,13 @@ export default function PricingPage() {
                 ].map((f) => (
                   <li key={f} style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
+                    alignItems: 'flex-start',
+                    gap: '12px',
                     marginBottom: '12px',
                     fontSize: '14px',
+                    lineHeight: '1.5',
                   }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" style={{ flexShrink: 0, marginTop: '2px' }}>
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     {f}
@@ -310,27 +294,27 @@ export default function PricingPage() {
             {/* Report Option */}
             <div style={{
               background: 'white',
-              borderRadius: '24px',
-              padding: '32px',
+              borderRadius: '20px',
+              padding: '40px 32px',
               border: '1px solid #e5e5e5',
             }}>
-              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px', color: '#0a0a0a' }}>
                 Report
               </h3>
-              <p style={{ color: '#666', marginBottom: '24px', fontSize: '15px' }}>
+              <p style={{ color: '#666', marginBottom: '32px', fontSize: '14px', minHeight: '20px' }}>
                 Deep-dive one-time analysis.
               </p>
 
-              <div style={{ marginBottom: '24px' }}>
-                <span style={{ fontSize: '40px', fontWeight: '700' }}>£14.99</span>
-                <span style={{ color: '#888', marginLeft: '8px', fontSize: '15px' }}>/once</span>
+              <div style={{ marginBottom: '32px' }}>
+                <span style={{ fontSize: '48px', fontWeight: '700', color: '#0a0a0a' }}>£14.99</span>
+                <span style={{ fontSize: '18px', color: '#888', marginLeft: '4px' }}>/once</span>
               </div>
 
               <button
                 onClick={() => setShowReportModal(true)}
                 style={{
                   width: '100%',
-                  padding: '14px',
+                  padding: '16px',
                   background: '#0a0a0a',
                   color: 'white',
                   border: 'none',
@@ -338,7 +322,7 @@ export default function PricingPage() {
                   fontSize: '15px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  marginBottom: '24px',
+                  marginBottom: '32px',
                 }}
               >
                 Get Report
@@ -353,13 +337,14 @@ export default function PricingPage() {
                 ].map((f) => (
                   <li key={f} style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
+                    alignItems: 'flex-start',
+                    gap: '12px',
                     marginBottom: '12px',
                     fontSize: '14px',
                     color: '#444',
+                    lineHeight: '1.5',
                   }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" style={{ flexShrink: 0, marginTop: '2px' }}>
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     {f}
@@ -370,7 +355,7 @@ export default function PricingPage() {
           </div>
 
           {/* Footer */}
-          <p style={{ textAlign: 'center', color: '#888', fontSize: '14px' }}>
+          <p style={{ textAlign: 'center', color: '#888', fontSize: '14px', marginTop: '60px' }}>
             🔒 Secure payment processing • Cancel anytime • No hidden fees
           </p>
         </div>
@@ -383,7 +368,7 @@ export default function PricingPage() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.6)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -395,40 +380,39 @@ export default function PricingPage() {
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
-              borderRadius: '24px',
-              maxWidth: '400px',
+              borderRadius: '20px',
+              maxWidth: '440px',
               width: '100%',
-              padding: '40px 32px',
+              padding: '48px 40px',
               textAlign: 'center',
               position: 'relative',
             }}
           >
-            {/* Close button */}
             <button
               onClick={() => setShowPaymentModal(false)}
               style={{
                 position: 'absolute',
-                top: '16px',
-                right: '16px',
+                top: '20px',
+                right: '20px',
                 width: '32px',
                 height: '32px',
                 borderRadius: '50%',
                 border: 'none',
                 background: '#f5f5f5',
                 cursor: 'pointer',
-                fontSize: '18px',
+                fontSize: '20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                color: '#666',
               }}
             >
               ×
             </button>
 
-            {/* Icon */}
             <div style={{
-              width: '72px',
-              height: '72px',
+              width: '64px',
+              height: '64px',
               borderRadius: '50%',
               background: '#f5f5f5',
               display: 'flex',
@@ -436,56 +420,23 @@ export default function PricingPage() {
               justifyContent: 'center',
               margin: '0 auto 24px',
             }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
                 <line x1="1" y1="10" x2="23" y2="10"/>
               </svg>
             </div>
 
-            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '12px', color: '#0a0a0a' }}>
               Premium Coming Soon
             </h2>
             <p style={{
               fontSize: '15px',
               color: '#666',
-              marginBottom: '28px',
+              marginBottom: '32px',
               lineHeight: 1.6
             }}>
               We're setting up secure payment processing. Premium features will be available very soon!
             </p>
-
-            {/* Features */}
-            <div style={{
-              background: '#f9fafb',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '28px',
-              textAlign: 'left',
-            }}>
-              <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px', fontWeight: '600' }}>
-                WHAT YOU'LL GET WITH PREMIUM
-              </p>
-              {[
-                'Unlimited scans',
-                'Advanced metrics tracking',
-                'Progress timeline',
-                'Priority support',
-              ].map((f) => (
-                <div key={f} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  fontSize: '14px',
-                  marginBottom: '8px',
-                  color: '#444',
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  {f}
-                </div>
-              ))}
-            </div>
 
             <button
               onClick={() => setShowPaymentModal(false)}
@@ -495,7 +446,7 @@ export default function PricingPage() {
                 background: '#0a0a0a',
                 color: 'white',
                 border: 'none',
-                borderRadius: '12px',
+                borderRadius: '10px',
                 fontSize: '15px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -504,7 +455,7 @@ export default function PricingPage() {
               Got it
             </button>
 
-            <p style={{ fontSize: '13px', color: '#888', marginTop: '16px' }}>
+            <p style={{ fontSize: '13px', color: '#888', marginTop: '20px' }}>
               In the meantime, enjoy unlimited free scans!
             </p>
           </div>
@@ -518,7 +469,7 @@ export default function PricingPage() {
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.6)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -530,40 +481,39 @@ export default function PricingPage() {
             onClick={(e) => e.stopPropagation()}
             style={{
               background: 'white',
-              borderRadius: '24px',
-              maxWidth: '400px',
+              borderRadius: '20px',
+              maxWidth: '440px',
               width: '100%',
-              padding: '40px 32px',
+              padding: '48px 40px',
               textAlign: 'center',
               position: 'relative',
             }}
           >
-            {/* Close button */}
             <button
               onClick={() => setShowReportModal(false)}
               style={{
                 position: 'absolute',
-                top: '16px',
-                right: '16px',
+                top: '20px',
+                right: '20px',
                 width: '32px',
                 height: '32px',
                 borderRadius: '50%',
                 border: 'none',
                 background: '#f5f5f5',
                 cursor: 'pointer',
-                fontSize: '18px',
+                fontSize: '20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                color: '#666',
               }}
             >
               ×
             </button>
 
-            {/* Icon */}
             <div style={{
-              width: '72px',
-              height: '72px',
+              width: '64px',
+              height: '64px',
               borderRadius: '50%',
               background: '#f5f5f5',
               display: 'flex',
@@ -571,60 +521,25 @@ export default function PricingPage() {
               justifyContent: 'center',
               margin: '0 auto 24px',
             }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="1.5">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/>
                 <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
               </svg>
             </div>
 
-            <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '12px', color: '#0a0a0a' }}>
               Dermatology Reports
             </h2>
             <p style={{
               fontSize: '15px',
               color: '#666',
-              marginBottom: '28px',
+              marginBottom: '32px',
               lineHeight: 1.6
             }}>
-              Comprehensive PDF reports are coming soon. Get detailed analysis
-              you can share with your dermatologist.
+              Comprehensive PDF reports are coming soon. Get detailed analysis you can share with your dermatologist.
             </p>
-
-            {/* Features */}
-            <div style={{
-              background: '#f9fafb',
-              borderRadius: '12px',
-              padding: '20px',
-              marginBottom: '28px',
-              textAlign: 'left',
-            }}>
-              <p style={{ fontSize: '12px', color: '#888', marginBottom: '12px', fontWeight: '600' }}>
-                WHAT YOU'LL GET
-              </p>
-              {[
-                'Complete scan history',
-                'Progress visualizations',
-                'Personalized insights',
-                'Shareable PDF format',
-              ].map((f) => (
-                <div key={f} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  fontSize: '14px',
-                  marginBottom: '8px',
-                  color: '#444',
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  {f}
-                </div>
-              ))}
-            </div>
 
             <button
               onClick={() => setShowReportModal(false)}
@@ -634,7 +549,7 @@ export default function PricingPage() {
                 background: '#0a0a0a',
                 color: 'white',
                 border: 'none',
-                borderRadius: '12px',
+                borderRadius: '10px',
                 fontSize: '15px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -643,7 +558,7 @@ export default function PricingPage() {
               Got it
             </button>
 
-            <p style={{ fontSize: '13px', color: '#888', marginTop: '16px' }}>
+            <p style={{ fontSize: '13px', color: '#888', marginTop: '20px' }}>
               Expected: February 2026
             </p>
           </div>
